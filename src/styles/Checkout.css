@@ -1,0 +1,9 @@
+/* src/pages/Home.css */
+.home-container {
+    text-align: center;
+    position: relative;
+    height: 100vh; /* Make sure the container takes up the full height of the viewport */
+    overflow-y: auto; /* Enable vertical scrolling if the content exceeds the container height */
+  }
+
+  

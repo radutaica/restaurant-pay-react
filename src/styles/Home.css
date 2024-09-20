@@ -1,0 +1,11 @@
+/* src/pages/Home.css */
+.home-container {
+    text-align: center;
+    position: relative; /* Allows positioning of the logo circle */
+  }
+  
+  .content {
+    margin-top: 60px; /* Ensures content doesn't overlap with the circle */
+    padding: 20px
+  }
+  

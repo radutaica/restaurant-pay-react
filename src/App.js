@@ -1,9 +1,9 @@
-// src/App.js
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
 import Home from './pages/Home';
 import UnderConstruction from './pages/UnderConstruction';
+import Checkout from './pages/Checkout'; // Import the Checkout page
 
 function App() {
   const [isMobile, setIsMobile] = useState(false);
@@ -17,7 +17,10 @@ function App() {
     <Router>
       <Routes>
         {isMobile ? (
-          <Route path="/" element={<Home />} />
+          <>
+            <Route path="/" element={<Home />} />
+            <Route path="/checkout" element={<Checkout />} />
+          </>
         ) : (
           <Route path="/" element={<UnderConstruction />} />
         )}
