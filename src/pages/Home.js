@@ -22,7 +22,7 @@ const Home = () => {
         <p style= {{color: '#909090'}}>Table Ground Floor: 34</p>
         <h1>Welcome to the fastest way to pay </h1>
       </div>
-      <div style = {{display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
+      <div style = {{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '20%'}}>
         <div
           style={{
             opacity: isPressed ? 0.2 : 1,
@@ -48,6 +48,7 @@ const Home = () => {
         alignItems: 'flex-end', 
         position: 'fixed', 
         bottom: 0, 
+        left: -10,
         width: '100%', 
         justifyContent: 'center',
         padding: '10px',
