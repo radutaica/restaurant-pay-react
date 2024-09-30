@@ -5,10 +5,11 @@ import topImage from '../assets/brunch.jpg'; // Import your top image
 import logo from '../assets/demo_logo.png'; // Import your logo
 import TopImage from '../components/TopImage';
 import { MdOutlineSubdirectoryArrowRight } from "react-icons/md";
+import { useNavigate } from 'react-router-dom';
 
 
 const Checkout = () => {
-
+  const navigate = useNavigate(); 
   const [isPressed, setIsPressed] = useState(false);
   const foodItems = [
     { id: 1, name: 'Burger', cost: 5.99, quantity: 1, extra: 'Add Bacon', extra_cost: 3.50 },
@@ -89,7 +90,10 @@ const Checkout = () => {
             cursor: 'pointer',
             userSelect: 'none',
           }}
-          onClick={() => {setIsPressed(!isPressed)}}
+          onClick={() => {
+            setIsPressed(!isPressed);
+            navigate('/checkoutform'); // Navigate to Checkout page
+          }}
         >
           Pay the bill
         </div>
