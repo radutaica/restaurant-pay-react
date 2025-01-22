@@ -20,13 +20,13 @@ const CheckoutForm = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [emailInput, setEmailInput] = useState('');
   const [clientSecret, setClientSecret] = useState(null);
+  const [paymentID, setPaymentID] = useState();
   
   const fetchPaymentIntent = async () => {
     try {
-      console.log("HEYYY")
       const response = await axios.post(
         `${baseUrl}/users/payment/create_payment`,
-        { amount: 10 }, // example amount in cents (e.g., $41.59)
+        { amount: 10 },
         {
           headers: {
             'Content-Type': 'application/json',
@@ -34,7 +34,10 @@ const CheckoutForm = () => {
           },
         }
       );
-      setClientSecret(response.data.client_secret);
+      if (response.status === 200) {
+        setClientSecret(response.data.client_secret);
+        setPaymentID(response.data.payment_id)
+      }
     } catch (error) {
       console.error('Error fetching payment intent:', error);
       setErrorMessage('Failed to initiate payment');
@@ -47,18 +50,24 @@ const CheckoutForm = () => {
   }, []);
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!stripe || !elements) {
-      return; // Stripe.js has not loaded yet
-    }
-
-    const { error } = await stripe.confirmPayment({
-      elements,
-    });
-
-    if (error) {
-      setErrorMessage(error.message);
+    try {
+      console.log("TRIGGER")
+      const response = await axios.post(
+        `${baseUrl}/users/payment/pay_bill`,
+        { payment_id: paymentID },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+        }
+      );
+      if (response.status === 200) {
+        console.log("It worked")
+      }
+    } catch (error) {
+      console.error('Error fetching payment intent:', error);
+      setErrorMessage('Failed to initiate payment');
     }
   };
 

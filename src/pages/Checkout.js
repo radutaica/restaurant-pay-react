@@ -102,12 +102,12 @@ const Checkout = () => {
         display: 'flex', 
         alignItems: 'flex-end', 
         position: 'fixed', 
-        bottom: 0,
+        bottom: 10,
         left: -10, 
         width: '100%', 
         justifyContent: 'center',
         padding: '10px',
-        backgroundColor: 'white',
+        backgroundColor: 'transparent',
       }}>
         Pay securely with Stripe
       </p>
