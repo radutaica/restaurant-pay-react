@@ -8,6 +8,7 @@ import {
 import { baseUrl } from './ReusableData';
 import axios from 'axios';
 import { loadStripe } from '@stripe/stripe-js';
+import { useNavigate } from 'react-router-dom';
 import '../styles/CheckoutForm.css';
 
 // Load your Stripe publishable key
@@ -63,10 +64,14 @@ const CheckoutForm = () => {
 const CheckoutFormContent = ({ errorMessage, setErrorMessage, emailInput, setEmailInput, paymentID }) => {
   const stripe = useStripe();
   const elements = useElements();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false); // Loading state for processing
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!stripe || !elements) return; // Ensure Stripe is loaded
+
+    setLoading(true); // Show loading indicator when payment starts
 
     const { error } = await stripe.confirmPayment({
       elements,
@@ -79,8 +84,12 @@ const CheckoutFormContent = ({ errorMessage, setErrorMessage, emailInput, setEma
     if (error) {
       setErrorMessage(error.message);
       console.error("Payment confirmation error:", error);
+      setLoading(false); // Hide loading indicator on error
     } else {
-      console.log("IT WORKS")
+      console.log("Payment successful!");
+      setTimeout(() => {
+        navigate('/payment-success'); // Redirect to success page
+      }, 2000); // Delay for 2 seconds before redirecting
     }
   };
 
@@ -112,13 +121,20 @@ const CheckoutFormContent = ({ errorMessage, setErrorMessage, emailInput, setEma
         }}
       />
       
-      {/* Submit button */}
-      <button type="submit" disabled={!stripe || !elements}>
-        Pay $41.59
+      {/* Submit button with loading indicator */}
+      <button type="submit" disabled={!stripe || !elements || loading}>
+        {loading ? "Processing Payment..." : "Pay $41.59"}
       </button>
 
+      {/* Show loading indicator */}
+      {loading && (
+        <p style={{ textAlign: 'center', marginTop: '15px', color: 'green' }}>
+          Your payment is being processed, thank you for your patience...
+        </p>
+      )}
+
       {/* Show error message */}
-      {errorMessage && <div>{errorMessage}</div>}
+      {errorMessage && <div style={{ color: 'red', marginTop: '10px' }}>{errorMessage}</div>}
     </form>
   );
 };

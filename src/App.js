@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import UnderConstruction from './pages/UnderConstruction';
 import Checkout from './pages/Checkout'; // Import the Checkout page
 import CheckoutFormPage from './pages/CheckoutFormPage';
+import PaymentSuccess from './pages/PaymentSuccess';
 
 function App() {
   const [isMobile, setIsMobile] = useState(false);
@@ -22,6 +23,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/checkoutform" element={<CheckoutFormPage />} />
+            <Route path="/payment-success" element={<PaymentSuccess />} />
           </>
         ) : (
           <Route path="/" element={<UnderConstruction />} />

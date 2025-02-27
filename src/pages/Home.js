@@ -5,6 +5,7 @@ import topImage from '../assets/brunch.jpg'; // Import your top image
 import logo from '../assets/demo_logo.png'; // Import your logo
 import TopImage from '../components/TopImage';
 import { useNavigate } from 'react-router-dom';
+import MainButton from '../components/MainButton';
 
 const Home = () => {
 
@@ -23,25 +24,13 @@ const Home = () => {
         <h1>Welcome to the fastest way to pay </h1>
       </div>
       <div style = {{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '20%'}}>
-        <div
-          style={{
-            opacity: isPressed ? 0.2 : 1,
-            width: '80%',
-            backgroundColor: 'black',
-            padding: '20px 20px',
-            borderRadius: '30px',
-            color: 'white',
-            textAlign: 'center',
-            cursor: 'pointer',
-            userSelect: 'none',
-          }}
-          onClick={() => {
-            setIsPressed(!isPressed);
-            navigate('/checkout'); // Navigate to Checkout page
-          }}
-        >
-          Pay the bill
-        </div>
+        <MainButton 
+          text="Pay the bill" 
+          onPress={() => {
+            setIsPressed(!isPressed); 
+            navigate('/checkout');
+          }} 
+        />
       </div>
       <p style={{
         display: 'flex', 

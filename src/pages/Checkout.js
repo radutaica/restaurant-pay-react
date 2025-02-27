@@ -6,6 +6,7 @@ import logo from '../assets/demo_logo.png'; // Import your logo
 import TopImage from '../components/TopImage';
 import { MdOutlineSubdirectoryArrowRight } from "react-icons/md";
 import { useNavigate } from 'react-router-dom';
+import MainButton from '../components/MainButton';
 
 
 const Checkout = () => {
@@ -17,6 +18,16 @@ const Checkout = () => {
     { id: 3, name: 'Sushi', cost: 12.50, quantity: 1 },
     { id: 4, name: 'Pasta', cost: 7.25, quantity: 3 },
     { id: 5, name: 'Salad', cost: 4.99, quantity: 1 },
+    { id: 6, name: 'Burger', cost: 5.99, quantity: 1, extra: 'Add Bacon', extra_cost: 3.50 },
+    { id: 7, name: 'Pizza', cost: 8.99, quantity: 2 },
+    { id: 8, name: 'Sushi', cost: 12.50, quantity: 1 },
+    { id: 9, name: 'Pasta', cost: 7.25, quantity: 3 },
+    { id: 10, name: 'Salad', cost: 4.99, quantity: 1 },
+    { id: 11, name: 'Burger', cost: 5.99, quantity: 1, extra: 'Add Bacon', extra_cost: 3.50 },
+    { id: 12, name: 'Pizza', cost: 8.99, quantity: 2 },
+    { id: 13, name: 'Sushi', cost: 12.50, quantity: 1 },
+    { id: 14, name: 'Pasta', cost: 7.25, quantity: 3 },
+    { id: 15, name: 'Salad', cost: 4.99, quantity: 1 },
   ];
   const calculate_total = () => {
     let total = 0
@@ -24,7 +35,7 @@ const Checkout = () => {
       item.extra_cost ? total += (item.cost *item.quantity + item.extra_cost) : total += item.cost * item.quantity
       
     ))
-    return total
+    return total.toFixed(2)
   }
 
   return (
@@ -44,59 +55,55 @@ const Checkout = () => {
         </div>
       </div>
       <div style = {{backgroundColor: '#E8E8E8', padding: '10px', borderWidth: 1, borderRadius: 25, marginRight: 10, marginLeft: 10}}>
-      {foodItems.map((item) => (
-        <li key={item.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '7.5px 20px'}}>
-          <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-            <span style={{ display: 'flex', alignItems: 'center' }}>
-              <span 
-                style={{
-                  backgroundColor: 'white', 
-                  color: 'black', 
-                  padding: '3px 8px', 
-                  borderRadius: '4px', 
-                  marginRight: '10px',
-                  fontSize: '14px',
-                }}
-              >
-                {item.quantity}
+        <div style={{
+            backgroundColor: '#E8E8E8', 
+            padding: '10px', 
+            borderWidth: 1, 
+            borderRadius: 25, 
+            marginRight: 10, 
+            marginLeft: 10,
+            height: '300px',  // Fixed height for scrollable area
+            overflowY: 'auto' // Enables vertical scrolling
+          }}>
+        {foodItems.map((item) => (
+            <li key={item.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '7.5px 20px'}}>
+              <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                <span style={{ display: 'flex', alignItems: 'center' }}>
+                  <span 
+                    style={{
+                      backgroundColor: 'white', 
+                      color: 'black', 
+                      padding: '3px 8px', 
+                      borderRadius: '4px', 
+                      marginRight: '10px',
+                      fontSize: '14px',
+                    }}
+                  >
+                    {item.quantity}
+                  </span>
+                  <span>{item.name}</span>
+                </span>
+                {item.extra ? (
+                  <span style={{ fontSize: '12px', color: '#888', marginTop: '5px', marginLeft: 30, display: 'flex', alignItems: 'center' }}>
+                  <MdOutlineSubdirectoryArrowRight 
+                    style={{fontSize: '16px', marginTop: -5 }} 
+                  />
+                  <span style={{ marginRight: '3px' }}>{item.extra}</span>
+                  (${item.extra_cost})
+                </span>
+                ) : null}
               </span>
-              <span>{item.name}</span>
-            </span>
-            {item.extra ? (
-              <span style={{ fontSize: '12px', color: '#888', marginTop: '5px', marginLeft: 30, display: 'flex', alignItems: 'center' }}>
-              <MdOutlineSubdirectoryArrowRight 
-                style={{fontSize: '16px', marginTop: -5 }} 
-              />
-              <span style={{ marginRight: '3px' }}>{item.extra}</span>
-              (${item.extra_cost})
-            </span>
-            ) : null}
-          </span>
-          <span>${item.cost * item.quantity}</span>
-        </li>
-      
-      ))}
+              <span>${item.cost * item.quantity}</span>
+            </li>
+        ))}
+        </div>
       </div>
       <div style = {{display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '50px'}}>
-        <div
-          style={{
-            opacity: isPressed ? 0.2 : 1,
-            width: '80%',
-            backgroundColor: 'black',
-            padding: '20px 20px',
-            borderRadius: '30px',
-            color: 'white',
-            textAlign: 'center',
-            cursor: 'pointer',
-            userSelect: 'none',
-          }}
-          onClick={() => {
-            setIsPressed(!isPressed);
-            navigate('/checkoutform'); // Navigate to Checkout page
-          }}
-        >
-          Pay the bill
-        </div>
+        <MainButton text = {'Pay the bill'} 
+        onPress={() => {
+          setIsPressed(!isPressed);
+          navigate('/checkoutform'); // Navigate to Checkout page
+        }}/>
       </div>
       <p style={{
         display: 'flex', 
