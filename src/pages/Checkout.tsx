@@ -8,9 +8,9 @@ import { MdOutlineSubdirectoryArrowRight } from "react-icons/md";
 import { useNavigate } from 'react-router-dom';
 
 
-const Checkout = () => {
+const Checkout: React.FC = () => {
   const navigate = useNavigate(); 
-  const [isPressed, setIsPressed] = useState(false);
+  const [isPressed, setIsPressed] = useState<boolean>(false);
   const foodItems = [
     { id: 1, name: 'Burger', cost: 5.99, quantity: 1, extra: 'Add Bacon', extra_cost: 3.50 },
     { id: 2, name: 'Pizza', cost: 8.99, quantity: 2 },

@@ -1,7 +1,7 @@
 // src/pages/UnderConstruction.js
 import React from 'react';
 
-const UnderConstruction = () => {
+const UnderConstruction: React.FC = () => {
   return (
     <div style={{
       display: 'flex',

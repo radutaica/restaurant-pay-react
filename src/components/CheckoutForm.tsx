@@ -13,14 +13,14 @@ import '../styles/CheckoutForm.css';
 // Load your Stripe publishable key
 const stripePromise = loadStripe('pk_test_51Q4n7pKc7qc8vhebMAaJl8f41z4a1KSK3ofSeno1K2D62AH5DyWfzWSwkQgt0cbSg2GKG3G2tEeHns2Kg2OQVtJN00pfcNCBwe');
 
-const CheckoutForm = () => {
+const CheckoutForm: React.FC = () => {
   const stripe = useStripe();
   const elements = useElements();
 
-  const [errorMessage, setErrorMessage] = useState('');
-  const [emailInput, setEmailInput] = useState('');
-  const [clientSecret, setClientSecret] = useState(null);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [emailInput, setEmailInput] = useState<string>('');
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
   const fetchPaymentIntent = async () => {
     try {
@@ -45,18 +45,21 @@ const CheckoutForm = () => {
     fetchPaymentIntent();
   }, []);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!stripe || !elements) return; // Stripe.js has not loaded yet
+    if (!stripe || !elements || !clientSecret) return; // Stripe.js has not loaded yet
 
     setIsProcessing(true);
 
     const { error } = await stripe.confirmPayment({
       elements,
+      confirmParams: {
+        return_url: `${window.location.origin}/checkoutform`,
+      },
     });
 
     if (error) {
-      setErrorMessage(error.message);
+      setErrorMessage(error.message || 'An error occurred during payment');
       setIsProcessing(false);
     } else {
       setErrorMessage('');

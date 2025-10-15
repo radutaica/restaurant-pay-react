@@ -6,9 +6,9 @@ import logo from '../assets/demo_logo.png'; // Import your logo
 import TopImage from '../components/TopImage';
 import { useNavigate } from 'react-router-dom';
 
-const Home = () => {
+const Home: React.FC = () => {
 
-  const [isPressed, setIsPressed] = useState(false);
+  const [isPressed, setIsPressed] = useState<boolean>(false);
   const navigate = useNavigate(); 
 
   return (

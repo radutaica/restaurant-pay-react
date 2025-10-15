@@ -2,7 +2,15 @@
 import React from 'react';
 import '../styles/TopImage.css'; // Import CSS for styling
 
-const TopImage= ({ imageSrc, logoSrc, logoSize = 80, imageAlt = "Top of the page", logoAlt = "Logo" }) => {
+interface TopImageProps {
+  imageSrc: string;
+  logoSrc: string;
+  logoSize?: number;
+  imageAlt?: string;
+  logoAlt?: string;
+}
+
+const TopImage: React.FC<TopImageProps> = ({ imageSrc, logoSrc, logoSize = 80, imageAlt = "Top of the page", logoAlt = "Logo" }) => {
   return (
     <div className="image-with-logo-container">
       <img 
