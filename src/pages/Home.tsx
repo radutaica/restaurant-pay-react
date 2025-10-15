@@ -1,8 +1,6 @@
-// src/pages/Home.js
 import React, {useState} from 'react';
-import '../styles/Home.css'; // Import CSS for styling
-import topImage from '../assets/brunch.jpg'; // Import your top image
-import logo from '../assets/demo_logo.png'; // Import your logo
+import topImage from '../assets/brunch.jpg';
+import logo from '../assets/demo_logo.png';
 import TopImage from '../components/TopImage';
 import { useNavigate } from 'react-router-dom';
 
@@ -12,48 +10,30 @@ const Home: React.FC = () => {
   const navigate = useNavigate(); 
 
   return (
-    <div className="home-container">
+    <div className="text-center relative h-screen overflow-y-auto">
      <TopImage 
         imageSrc={topImage}
         logoSrc={logo}
-        logoSize={80} // You can change the logo size if needed
+        logoSize={80}
       />
-      <div className="content">
-        <p style= {{color: '#909090'}}>Table Ground Floor: 34</p>
-        <h1>Welcome to the fastest way to pay </h1>
+      <div className="mt-16 p-5">
+        <p className="text-gray-400">Table Ground Floor: 34</p>
+        <h1 className="text-2xl font-bold mt-4">Welcome to the fastest way to pay</h1>
       </div>
-      <div style = {{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '20%'}}>
+      <div className="flex justify-center items-center h-1/5">
         <div
-          style={{
-            opacity: isPressed ? 0.2 : 1,
-            width: '80%',
-            backgroundColor: 'black',
-            padding: '20px 20px',
-            borderRadius: '30px',
-            color: 'white',
-            textAlign: 'center',
-            cursor: 'pointer',
-            userSelect: 'none',
-          }}
+          className={`w-4/5 bg-black py-5 px-5 rounded-full text-white text-center cursor-pointer select-none transition-opacity duration-200 ${
+            isPressed ? 'opacity-20' : 'opacity-100'
+          }`}
           onClick={() => {
             setIsPressed(!isPressed);
-            navigate('/checkout'); // Navigate to Checkout page
+            navigate('/checkout');
           }}
         >
           Pay the bill
         </div>
       </div>
-      <p style={{
-        display: 'flex', 
-        alignItems: 'flex-end', 
-        position: 'fixed', 
-        bottom: 10, 
-        left: -10,
-        width: '100%', 
-        justifyContent: 'center',
-        padding: '10px',
-        backgroundColor: 'transparent'
-      }}>
+      <p className="flex items-end fixed bottom-2 left-0 w-full justify-center p-2 bg-transparent text-sm text-gray-600">
         Pay securely with Stripe
       </p>
     </div>

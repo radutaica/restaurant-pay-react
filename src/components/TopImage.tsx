@@ -1,6 +1,5 @@
 
 import React from 'react';
-import '../styles/TopImage.css'; // Import CSS for styling
 
 interface TopImageProps {
   imageSrc: string;
@@ -12,14 +11,17 @@ interface TopImageProps {
 
 const TopImage: React.FC<TopImageProps> = ({ imageSrc, logoSrc, logoSize = 80, imageAlt = "Top of the page", logoAlt = "Logo" }) => {
   return (
-    <div className="image-with-logo-container">
+    <div className="text-center relative">
       <img 
         src={imageSrc} 
         alt={imageAlt} 
-        className="top-image" 
+        className="w-full max-h-80 object-cover rounded-b-2xl shadow-lg" 
       />
-      <div className="circle-logo" style={{ width: logoSize, height: logoSize }}>
-        <img src={logoSrc} alt={logoAlt} className="logo-image" />
+      <div 
+        className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 bg-white rounded-full flex items-center justify-center shadow-lg overflow-hidden"
+        style={{ width: logoSize, height: logoSize }}
+      >
+        <img src={logoSrc} alt={logoAlt} className="w-full h-full object-cover" />
       </div>
     </div>
   );

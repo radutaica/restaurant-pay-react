@@ -1,10 +1,8 @@
-// src/pages/Home.js
 import React, {useState} from 'react';
-import '../styles/Checkout.css'; // Import CSS for styling
-import topImage from '../assets/brunch.jpg'; // Import your top image
-import logo from '../assets/demo_logo.png'; // Import your logo
+import topImage from '../assets/brunch.jpg';
+import logo from '../assets/demo_logo.png';
 import TopImage from '../components/TopImage';
-import { MdOutlineSubdirectoryArrowRight } from "react-icons/md";
+// import { MdOutlineSubdirectoryArrowRight } from "react-icons/md";
 import { useNavigate } from 'react-router-dom';
 
 
@@ -28,48 +26,37 @@ const Checkout: React.FC = () => {
   }
 
   return (
-    <div className="home-container">
+    <div className="text-center relative h-screen overflow-y-auto">
      <TopImage 
         imageSrc={topImage}
         logoSrc={logo}
-        logoSize={80} // You can change the logo size if needed
+        logoSize={80}
       />
-      <div style={{ display: 'flex', justifyContent: 'space-between', paddingRight: 15, paddingLeft: 15 }}>
-        <div style={{ textAlign: 'left' }}>
-            <p style = {{fontSize: 30, fontWeight: '500'}}>Pay your bill</p>
-            <p style={{ color: '#909090', marginTop: '-20px' }}>Table Ground Floor: 34</p>
+      <div className="flex justify-between px-4">
+        <div className="text-left">
+            <p className="text-3xl font-medium">Pay your bill</p>
+            <p className="text-gray-400 -mt-5">Table Ground Floor: 34</p>
         </div>
-        <div style={{display: 'flex', alignItems: 'flex-start'}}>
-            <p style = {{fontSize: 30, fontWeight: '500'}}>${calculate_total()}</p>
+        <div className="flex items-start">
+            <p className="text-3xl font-medium">${calculate_total()}</p>
         </div>
       </div>
-      <div style = {{backgroundColor: '#E8E8E8', padding: '10px', borderWidth: 1, borderRadius: 25, marginRight: 10, marginLeft: 10}}>
+      <div className="bg-gray-200 p-2 border rounded-3xl mx-2 my-4">
       {foodItems.map((item) => (
-        <li key={item.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '7.5px 20px'}}>
-          <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-            <span style={{ display: 'flex', alignItems: 'center' }}>
-              <span 
-                style={{
-                  backgroundColor: 'white', 
-                  color: 'black', 
-                  padding: '3px 8px', 
-                  borderRadius: '4px', 
-                  marginRight: '10px',
-                  fontSize: '14px',
-                }}
-              >
+        <li key={item.id} className="flex justify-between py-2 px-5">
+          <span className="flex flex-col items-start">
+            <span className="flex items-center">
+              <span className="bg-white text-black py-1 px-2 rounded mr-2 text-sm">
                 {item.quantity}
               </span>
               <span>{item.name}</span>
             </span>
             {item.extra ? (
-              <span style={{ fontSize: '12px', color: '#888', marginTop: '5px', marginLeft: 30, display: 'flex', alignItems: 'center' }}>
-              <MdOutlineSubdirectoryArrowRight 
-                style={{fontSize: '16px', marginTop: -5 }} 
-              />
-              <span style={{ marginRight: '3px' }}>{item.extra}</span>
-              (${item.extra_cost})
-            </span>
+              <span className="text-xs text-gray-500 mt-1 ml-8 flex items-center">
+                <span className="text-base -mt-1 mr-1">↳</span>
+                <span className="mr-1">{item.extra}</span>
+                (${item.extra_cost})
+              </span>
             ) : null}
           </span>
           <span>${item.cost * item.quantity}</span>
@@ -77,38 +64,20 @@ const Checkout: React.FC = () => {
       
       ))}
       </div>
-      <div style = {{display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '50px'}}>
+      <div className="flex justify-center items-center mt-12">
         <div
-          style={{
-            opacity: isPressed ? 0.2 : 1,
-            width: '80%',
-            backgroundColor: 'black',
-            padding: '20px 20px',
-            borderRadius: '30px',
-            color: 'white',
-            textAlign: 'center',
-            cursor: 'pointer',
-            userSelect: 'none',
-          }}
+          className={`w-4/5 bg-black py-5 px-5 rounded-full text-white text-center cursor-pointer select-none transition-opacity duration-200 ${
+            isPressed ? 'opacity-20' : 'opacity-100'
+          }`}
           onClick={() => {
             setIsPressed(!isPressed);
-            navigate('/checkoutform'); // Navigate to Checkout page
+            navigate('/checkoutform');
           }}
         >
           Pay the bill
         </div>
       </div>
-      <p style={{
-        display: 'flex', 
-        alignItems: 'flex-end', 
-        position: 'fixed', 
-        bottom: 10,
-        left: -10, 
-        width: '100%', 
-        justifyContent: 'center',
-        padding: '10px',
-        backgroundColor: 'transparent',
-      }}>
+      <p className="flex items-end fixed bottom-2 left-0 w-full justify-center p-2 bg-transparent text-sm text-gray-600">
         Pay securely with Stripe
       </p>
     </div>

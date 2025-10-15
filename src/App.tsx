@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import './App.css';
 import Home from './pages/Home';
 import UnderConstruction from './pages/UnderConstruction';
-import Checkout from './pages/Checkout'; // Import the Checkout page
+import Checkout from './pages/Checkout';
 import CheckoutFormPage from './pages/CheckoutFormPage';
 
 const App: React.FC = () => {
