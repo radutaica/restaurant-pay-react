@@ -2,13 +2,14 @@ import React, {useState} from 'react';
 import topImage from '../assets/brunch.jpg';
 import logo from '../assets/demo_logo.png';
 import TopImage from '../components/TopImage';
-// import { MdOutlineSubdirectoryArrowRight } from "react-icons/md";
+import PaymentModal from '../components/PaymentModal';
 import { useNavigate } from 'react-router-dom';
 
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate(); 
   const [isPressed, setIsPressed] = useState<boolean>(false);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const foodItems = [
     { id: 1, name: 'Burger', cost: 5.99, quantity: 1, extra: 'Add Bacon', extra_cost: 3.50 },
     { id: 2, name: 'Pizza', cost: 8.99, quantity: 2 },
@@ -32,10 +33,10 @@ const Checkout: React.FC = () => {
         logoSrc={logo}
         logoSize={80}
       />
-      <div className="flex justify-between px-4">
+      <div className="flex justify-between px-4 py-4">
         <div className="text-left">
             <p className="text-3xl font-medium">Pay your bill</p>
-            <p className="text-gray-400 -mt-5">Table Ground Floor: 34</p>
+            <p className="text-gray-400">Table Ground Floor: 34</p>
         </div>
         <div className="flex items-start">
             <p className="text-3xl font-medium">${calculate_total()}</p>
@@ -71,15 +72,21 @@ const Checkout: React.FC = () => {
           }`}
           onClick={() => {
             setIsPressed(!isPressed);
-            navigate('/checkoutform');
+            setIsModalOpen(true);
           }}
         >
-          Pay the bill
+          Pay or split bill
         </div>
       </div>
       <p className="flex items-end fixed bottom-2 left-0 w-full justify-center p-2 bg-transparent text-sm text-gray-600">
         Pay securely with Stripe
       </p>
+
+      {/* Payment Modal */}
+      <PaymentModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+      />
     </div>
   );
 };

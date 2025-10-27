@@ -18,7 +18,7 @@ const TopImage: React.FC<TopImageProps> = ({ imageSrc, logoSrc, logoSize = 80, i
         className="w-full max-h-80 object-cover rounded-b-2xl shadow-lg" 
       />
       <div 
-        className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 bg-white rounded-full flex items-center justify-center shadow-lg overflow-hidden"
+        className="absolute -bottom-5 left-1/2 transform -translate-x-1/2 bg-white rounded-full flex items-center justify-center shadow-lg overflow-hidden"
         style={{ width: logoSize, height: logoSize }}
       >
         <img src={logoSrc} alt={logoAlt} className="w-full h-full object-cover" />
