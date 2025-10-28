@@ -5,9 +5,8 @@ import {
   useStripe,
   useElements,
 } from '@stripe/react-stripe-js';
-import { baseUrl } from './ReusableData';
-import axios from 'axios';
 import { loadStripe } from '@stripe/stripe-js';
+import { PaymentService } from '../api';
 
 // Load your Stripe publishable key
 const stripePromise = loadStripe('pk_test_51Q4n7pKc7qc8vhebMAaJl8f41z4a1KSK3ofSeno1K2D62AH5DyWfzWSwkQgt0cbSg2GKG3G2tEeHns2Kg2OQVtJN00pfcNCBwe');
@@ -23,17 +22,8 @@ const CheckoutForm: React.FC = () => {
 
   const fetchPaymentIntent = async () => {
     try {
-      const response = await axios.post(
-        `${baseUrl}/users/payment/create_payment`,
-        { amount: 4159 }, // example amount in cents ($41.59)
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-          },
-        }
-      );
-      setClientSecret(response.data.client_secret);
+      const response = await PaymentService.createPaymentIntent({ amount: 4159 });
+      setClientSecret(response.client_secret);
     } catch (error) {
       console.error('Error fetching payment intent:', error);
       setErrorMessage('Failed to initiate payment. Please try again.');
@@ -110,7 +100,7 @@ const CheckoutForm: React.FC = () => {
             disabled={!stripe || !elements || isProcessing}
             className="w-full p-3 bg-blue-600 text-white border-none rounded text-base cursor-pointer text-center transition-colors duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed hover:bg-blue-700"
           >
-            {isProcessing ? 'Processing...' : 'Pay $41.59'}
+            {isProcessing ? 'Processing...' : `Pay ${PaymentService.formatAmount(4159)}`}
           </button>
 
           {/* Error message */}
