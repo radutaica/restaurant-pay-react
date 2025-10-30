@@ -19,6 +19,7 @@ const App: React.FC = () => {
         {isMobile ? (
           <>
             <Route path="/" element={<Home />} />
+            <Route path="/t/:slug" element={<Home />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/checkoutform" element={<CheckoutFormPage />} />
           </>

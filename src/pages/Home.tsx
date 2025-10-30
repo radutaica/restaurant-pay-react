@@ -1,13 +1,31 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import topImage from '../assets/brunch.jpg';
 import logo from '../assets/demo_logo.png';
 import TopImage from '../components/TopImage';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { BillSessionService } from '../api';
 
 const Home: React.FC = () => {
 
   const [isPressed, setIsPressed] = useState<boolean>(false);
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
+  const { slug } = useParams<{ slug: string }>();
+  const location = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const token = params.get('t');
+    if (slug && token) {
+      BillSessionService.createSession(slug, token)
+        .then((response) => {
+          console.log('Bill session response:', response);
+          navigate('/checkout');
+        })
+        .catch((error) => {
+          console.error('Failed to create bill session', error);
+        });
+    }
+  }, [slug, location.search, navigate]);
 
   return (
     <div className="text-center relative h-screen overflow-y-auto">
