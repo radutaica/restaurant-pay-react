@@ -2,8 +2,7 @@
 
 import { apiClient } from '../config/client';
 import { API_ENDPOINTS } from '../config';
-
-export type BillSessionResponse = Record<string, unknown>;
+import { BillSessionResponse } from '../types/billSession';
 
 export class BillSessionService {
   /**
