@@ -26,6 +26,9 @@ const Home: React.FC = () => {
           // Store session_token in sessionStorage (best practice for session tokens)
           sessionStorageUtils.setSessionToken(response.session_token);
           
+          // Store full session data for use in Checkout page
+          sessionStorage.setItem('bill_session_data', JSON.stringify(response));
+          
           // Store session data for display
           setSessionData(response);
           setIsLoading(false);

@@ -1,0 +1,47 @@
+import React from 'react';
+
+export const ApplePayIcon: React.FC = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
+  </svg>
+);
+
+export const GooglePayIcon: React.FC = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+    <rect width="24" height="24" rx="4" fill="#4285F4" />
+    <path
+      d="M12 8C10.34 8 8.92 8.84 8.05 10.17L6.28 8.4C7.45 6.55 9.56 5.25 12 5.25C13.24 5.25 14.38 5.58 15.36 6.16L13.63 7.89C13.05 7.63 12.54 7.5 12 7.5V8Z"
+      fill="white"
+    />
+    <path
+      d="M18.75 12C18.75 11.34 18.6 10.72 18.33 10.15L20.1 8.38C20.82 9.6 21.25 11.04 21.25 12.5C21.25 14.92 20.15 17.05 18.38 18.38L16.61 16.61C17.64 15.56 18.25 14.11 18.25 12.5H18.75V12Z"
+      fill="white"
+    />
+    <path
+      d="M5.85 14.85L7.62 13.08C7.55 12.72 7.5 12.36 7.5 12C7.5 11.64 7.55 11.28 7.62 10.92L5.85 9.15C5.32 10.02 5 11.01 5 12C5 12.99 5.32 13.98 5.85 14.85Z"
+      fill="white"
+    />
+    <path
+      d="M12 18.75C10.64 18.75 9.32 18.25 8.25 17.38L6.48 19.15C7.85 20.45 9.85 21.25 12 21.25C14.44 21.25 16.55 19.95 17.72 18.1L15.95 16.33C15.08 17.16 13.66 18 12 18V18.75Z"
+      fill="white"
+    />
+  </svg>
+);
+
+export const CreditCardIcon: React.FC = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+    <rect
+      x="3"
+      y="6"
+      width="18"
+      height="12"
+      rx="2"
+      stroke="currentColor"
+      strokeWidth="2"
+    />
+    <path d="M3 10H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <circle cx="7" cy="14" r="1" fill="currentColor" />
+    <path d="M11 14H17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+);
+
