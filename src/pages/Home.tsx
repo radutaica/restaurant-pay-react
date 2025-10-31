@@ -1,13 +1,15 @@
 import React, {useEffect, useState} from 'react';
-import topImage from '../assets/brunch.jpg';
-import logo from '../assets/demo_logo.png';
-import TopImage from '../components/TopImage';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { BillSessionService, BillSessionResponse } from '../api';
 import { sessionStorageUtils } from '../utils/sessionStorage';
+import BrandingHeader from '../components/BrandingHeader';
+import InfoCard from '../components/InfoCard';
+import ActionItem from '../components/ActionItem';
+import PrimaryButton from '../components/PrimaryButton';
+import FooterDisclaimer from '../components/FooterDisclaimer';
+import { BillIcon, CreditCardIcon } from '../components/icons';
 
 const Home: React.FC = () => {
-  const [isPressed, setIsPressed] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [sessionData, setSessionData] = useState<BillSessionResponse | null>(null);
   const navigate = useNavigate();
@@ -35,43 +37,49 @@ const Home: React.FC = () => {
     }
   }, [slug, location.search]);
 
-  const handlePayBill = () => {
+  const handleViewBill = () => {
     navigate('/checkout');
   };
 
+  // Default values for when session data is not loaded
+  const restaurantName = sessionData?.venue.name || 'Restaurant';
+  const tableName = sessionData?.table.name || 'Table';
+
   return (
-    <div className="text-center relative h-screen overflow-y-auto">
-     <TopImage 
-        imageSrc={topImage}
-        logoSrc={logo}
-        logoSize={80}
-      />
-      <div className="mt-10 p-5">
+    <div className="min-h-screen bg-background-light flex flex-col items-center justify-center px-4 py-8">
+      <div className="w-full max-w-lg">
+        <BrandingHeader />
+        
         {isLoading ? (
-          <p className="text-gray-400">Loading...</p>
-        ) : sessionData ? (
-          <>
-            <p className="text-gray-400">{sessionData.venue.name}</p>
-            <p className="text-gray-400">{sessionData.table.name}</p>
-          </>
+          <div className="text-center py-12">
+            <p className="text-text-light">Loading...</p>
+          </div>
         ) : (
-          <p className="text-gray-400">Table Ground Floor: 34</p>
+          <>
+            <InfoCard restaurantName={restaurantName} tableName={tableName}>
+              <ActionItem
+                icon={<BillIcon />}
+                text="View your bill and items"
+              />
+              <ActionItem
+                icon={<CreditCardIcon />}
+                text="Pay securely with Apple Pay, Google Pay, or card"
+              />
+            </InfoCard>
+
+            <div className="mb-8">
+              <PrimaryButton
+                onClick={handleViewBill}
+                disabled={!sessionData && !isLoading}
+              >
+                View Bill & Pay
+              </PrimaryButton>
+            </div>
+          </>
         )}
-        <h1 className="text-2xl font-bold mt-20 px-8">Welcome to the fastest way to pay</h1>
+
+        <FooterDisclaimer />
       </div>
-      <div className="flex justify-center items-center h-1/5">
-        <div
-          className={`w-4/5 bg-black py-5 px-5 rounded-full text-white text-center cursor-pointer select-none transition-opacity duration-200 ${
-            isPressed ? 'opacity-20' : 'opacity-100'
-          } ${!sessionData && !isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-          onClick={sessionData ? handlePayBill : undefined}
-        >
-          Pay the bill
-        </div>
-      </div>
-      <p className="flex items-end fixed bottom-2 left-0 w-full justify-center p-2 bg-transparent text-sm text-gray-600">
-        Pay securely with Stripe
-      </p>
     </div>
   );
 };
