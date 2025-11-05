@@ -7,27 +7,21 @@ import PrimaryButton from '../components/PrimaryButton';
 import SecondaryButton from '../components/SecondaryButton';
 import FooterDisclaimer from '../components/FooterDisclaimer';
 import { sessionStorageUtils } from '../utils/sessionStorage';
-
-// Mock bill items - Replace with actual API call when endpoint is available
-const mockBillItems: BillItemData[] = [
-  { id: 1, name: 'Margherita Pizza', quantity: 2, price_cents: 2250, currency: 'ron' },
-  { id: 2, name: 'Caesar Salad', quantity: 1, price_cents: 2800, currency: 'ron' },
-  { id: 3, name: 'Tiramisu', quantity: 2, price_cents: 1600, currency: 'ron' },
-  { id: 4, name: 'Mineral Water', quantity: 2, price_cents: 600, currency: 'ron' },
-];
+import { ItemTableRelationsService } from '../api';
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
-  const [billItems, setBillItems] = useState<BillItemData[]>(mockBillItems);
+  const [billItems, setBillItems] = useState<BillItemData[]>([]);
   const [restaurantName, setRestaurantName] = useState<string>('Restaurant');
   const [tableName, setTableName] = useState<string>('Table');
   const [subtotal, setSubtotal] = useState<number>(0);
   const [tax, setTax] = useState<number>(0);
   const [total, setTotal] = useState<number>(0);
   const [currency, setCurrency] = useState<string>('ron');
-  const [sessionDataLoaded, setSessionDataLoaded] = useState<boolean>(false);
+  const [isLoadingItems, setIsLoadingItems] = useState<boolean>(false);
+  const [itemsError, setItemsError] = useState<string | null>(null);
 
-  // Load session data on mount
+  // Load session data and fetch bill items on mount
   useEffect(() => {
     // Load session data from sessionStorage if available
     const sessionData = sessionStorageUtils.getFullSessionData();
@@ -35,31 +29,87 @@ const Checkout: React.FC = () => {
       setRestaurantName(sessionData.venue.name);
       setTableName(sessionData.table.name);
       setCurrency(sessionData.venue.currency);
-      
-      // Use bill data from session if available
-      if (sessionData.bill) {
+
+      // Fetch bill items from API
+      const tableId = sessionStorageUtils.getTableId();
+      if (tableId) {
+        setIsLoadingItems(true);
+        setItemsError(null);
+        ItemTableRelationsService.getByTableId(tableId)
+          .then((response) => {
+            // Transform API response to BillItemData format
+            // Group items by id to calculate quantities (if same item appears multiple times)
+            const itemMap = new Map<number, { item: BillItemData; count: number }>();
+            
+            response.forEach((item) => {
+              if (itemMap.has(item.id)) {
+                // Increment quantity if item already exists
+                const existing = itemMap.get(item.id)!;
+                existing.count += 1;
+              } else {
+                // Add new item with quantity 1
+                itemMap.set(item.id, {
+                  item: {
+                    id: item.id,
+                    name: item.name,
+                    quantity: 1,
+                    price_cents: item.price_cents,
+                    currency: sessionData.venue.currency,
+                  },
+                  count: 1,
+                });
+              }
+            });
+            
+            // Convert map to array and set final quantities
+            const transformedItems: BillItemData[] = Array.from(itemMap.values()).map(({ item, count }) => ({
+              ...item,
+              quantity: count,
+            }));
+            
+            setBillItems(transformedItems);
+            setIsLoadingItems(false);
+          })
+          .catch((error) => {
+            console.error('Error fetching bill items:', error);
+            setItemsError('Failed to load bill items. Please try again.');
+            setIsLoadingItems(false);
+            
+            // Fallback to session bill data if API fails
+            if (sessionData.bill) {
+              setSubtotal(sessionData.bill.subtotal_cents);
+              setTax(sessionData.bill.tax_cents);
+              setTotal(sessionData.bill.total_cents);
+            }
+          });
+      } else if (sessionData.bill) {
+        // Fallback: use session bill data if no tableId
         setSubtotal(sessionData.bill.subtotal_cents);
         setTax(sessionData.bill.tax_cents);
         setTotal(sessionData.bill.total_cents);
-        setSessionDataLoaded(true);
       }
     }
   }, []);
 
-  // Calculate totals from bill items if not loaded from session
+  // Calculate subtotal, tax, and total from bill items
   useEffect(() => {
-    if (!sessionDataLoaded) {
-      const subtotalCents = billItems.reduce((sum, item) => sum + (item.price_cents * item.quantity), 0);
+    if (billItems.length > 0) {
+      // Calculate subtotal: sum of (price * quantity) for each item
+      const subtotalCents = billItems.reduce((sum, item) => {
+        return sum + (item.price_cents * item.quantity);
+      }, 0);
+      
       // Tax calculation (19% VAT - common in Romania)
       const taxCents = Math.round(subtotalCents * 0.19);
+      
+      // Total = subtotal + tax
       const totalCents = subtotalCents + taxCents;
 
       setSubtotal(subtotalCents);
       setTax(taxCents);
       setTotal(totalCents);
     }
-    // TODO: Fetch actual bill items using session token from API
-  }, [billItems, sessionDataLoaded]);
+  }, [billItems]);
 
   const handlePayNow = () => {
     navigate('/payment');
@@ -82,19 +132,35 @@ const Checkout: React.FC = () => {
 
           {/* Bill Details Card */}
           <div className="bg-background-white rounded-lg shadow-card p-6 mb-6">
-            <div className="space-y-0">
-              {billItems.map((item) => (
-                <BillItem key={item.id} item={item} />
-              ))}
-            </div>
+            {isLoadingItems ? (
+              <div className="text-center py-8">
+                <p className="text-text-light">Loading bill items...</p>
+              </div>
+            ) : itemsError ? (
+              <div className="text-center py-8">
+                <p className="text-red-500">{itemsError}</p>
+              </div>
+            ) : billItems.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-text-light">No items found</p>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-0">
+                  {billItems.map((item) => (
+                    <BillItem key={item.id} item={item} />
+                  ))}
+                </div>
 
-            {/* Summary Section */}
-            <BillSummary
-              subtotal_cents={subtotal}
-              tax_cents={tax}
-              total_cents={total}
-              currency={currency}
-            />
+                {/* Summary Section */}
+                <BillSummary
+                  subtotal_cents={subtotal}
+                  tax_cents={tax}
+                  total_cents={total}
+                  currency={currency}
+                />
+              </>
+            )}
           </div>
 
         </div>

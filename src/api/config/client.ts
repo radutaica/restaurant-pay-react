@@ -2,6 +2,7 @@
 
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { API_CONFIG } from '../config';
+import { sessionStorageUtils } from '../../utils/sessionStorage';
 
 class ApiClient {
   private client: AxiosInstance;
@@ -20,7 +21,16 @@ class ApiClient {
     // Request interceptor
     this.client.interceptors.request.use(
       (config) => {
-        // Add any auth tokens, logging, etc. here
+        // Add session token to headers for authentication
+        const sessionToken = sessionStorageUtils.getSessionToken();
+        if (sessionToken) {
+          // Ensure headers object exists and set session token
+          // Using X-Session-Token header (you can change to Authorization: Bearer if preferred)
+          config.headers = config.headers || {};
+          (config.headers as Record<string, string>)['X-Session-Token'] = sessionToken;
+        }
+        
+        // Log request
         console.log(`Making ${config.method?.toUpperCase()} request to ${config.url}`);
         return config;
       },
