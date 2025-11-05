@@ -23,11 +23,8 @@ const Home: React.FC = () => {
       setIsLoading(true);
       BillSessionService.createSession(slug, token)
         .then((response) => {
-          // Store session_token in sessionStorage (best practice for session tokens)
-          sessionStorageUtils.setSessionToken(response.session_token);
-          
-          // Store full session data for use in Checkout page
-          sessionStorage.setItem('bill_session_data', JSON.stringify(response));
+          // Store all session data (session_token, table_id, bill_id, venue info, etc.)
+          sessionStorageUtils.setSessionData(response);
           
           // Store session data for display
           setSessionData(response);

@@ -5,7 +5,7 @@ import PaymentMethodButton from '../components/PaymentMethodButton';
 import TipButton from '../components/TipButton';
 import PrimaryButton from '../components/PrimaryButton';
 import { ApplePayIcon, GooglePayIcon, CreditCardIcon } from '../components/paymentIcons';
-import { BillSessionResponse } from '../api';
+import { sessionStorageUtils } from '../utils/sessionStorage';
 
 type PaymentMethod = 'apple' | 'google' | 'card';
 type TipOption = 'none' | '5' | '10' | '15' | 'custom';
@@ -22,21 +22,16 @@ const Payment: React.FC = () => {
 
   // Load session data and calculate totals
   useEffect(() => {
-    const storedSessionData = sessionStorage.getItem('bill_session_data');
-    if (storedSessionData) {
-      try {
-        const sessionData: BillSessionResponse = JSON.parse(storedSessionData);
-        setCurrency(sessionData.venue.currency);
-        
-        if (sessionData.bill) {
-          setSubtotal(sessionData.bill.subtotal_cents);
-          setTax(sessionData.bill.tax_cents);
-          // Calculate total without tip first
-          const baseTotal = sessionData.bill.total_cents;
-          setTotal(baseTotal);
-        }
-      } catch (error) {
-        console.error('Error parsing session data:', error);
+    const sessionData = sessionStorageUtils.getFullSessionData();
+    if (sessionData) {
+      setCurrency(sessionData.venue.currency);
+      
+      if (sessionData.bill) {
+        setSubtotal(sessionData.bill.subtotal_cents);
+        setTax(sessionData.bill.tax_cents);
+        // Calculate total without tip first
+        const baseTotal = sessionData.bill.total_cents;
+        setTotal(baseTotal);
       }
     }
   }, []);

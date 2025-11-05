@@ -6,7 +6,7 @@ import BillSummary from '../components/BillSummary';
 import PrimaryButton from '../components/PrimaryButton';
 import SecondaryButton from '../components/SecondaryButton';
 import FooterDisclaimer from '../components/FooterDisclaimer';
-import { BillSessionResponse } from '../api';
+import { sessionStorageUtils } from '../utils/sessionStorage';
 
 // Mock bill items - Replace with actual API call when endpoint is available
 const mockBillItems: BillItemData[] = [
@@ -30,23 +30,18 @@ const Checkout: React.FC = () => {
   // Load session data on mount
   useEffect(() => {
     // Load session data from sessionStorage if available
-    const storedSessionData = sessionStorage.getItem('bill_session_data');
-    if (storedSessionData) {
-      try {
-        const sessionData: BillSessionResponse = JSON.parse(storedSessionData);
-        setRestaurantName(sessionData.venue.name);
-        setTableName(sessionData.table.name);
-        setCurrency(sessionData.venue.currency);
-        
-        // Use bill data from session if available
-        if (sessionData.bill) {
-          setSubtotal(sessionData.bill.subtotal_cents);
-          setTax(sessionData.bill.tax_cents);
-          setTotal(sessionData.bill.total_cents);
-          setSessionDataLoaded(true);
-        }
-      } catch (error) {
-        console.error('Error parsing session data:', error);
+    const sessionData = sessionStorageUtils.getFullSessionData();
+    if (sessionData) {
+      setRestaurantName(sessionData.venue.name);
+      setTableName(sessionData.table.name);
+      setCurrency(sessionData.venue.currency);
+      
+      // Use bill data from session if available
+      if (sessionData.bill) {
+        setSubtotal(sessionData.bill.subtotal_cents);
+        setTax(sessionData.bill.tax_cents);
+        setTotal(sessionData.bill.total_cents);
+        setSessionDataLoaded(true);
       }
     }
   }, []);
