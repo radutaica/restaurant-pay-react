@@ -9,6 +9,9 @@ const VENUE_ID_KEY = 'venue_id';
 const VENUE_SLUG_KEY = 'venue_slug';
 const SESSION_EXPIRES_AT_KEY = 'session_expires_at';
 const FULL_SESSION_DATA_KEY = 'bill_session_data';
+const CALCULATED_SUBTOTAL_KEY = 'calculated_subtotal_cents';
+const CALCULATED_TAX_KEY = 'calculated_tax_cents';
+const CALCULATED_TOTAL_KEY = 'calculated_total_cents';
 
 export const sessionStorageUtils = {
   /**
@@ -153,6 +156,39 @@ export const sessionStorageUtils = {
   },
 
   /**
+   * Store calculated bill totals from Checkout page
+   * @param subtotal_cents - Subtotal in cents
+   * @param tax_cents - Tax in cents
+   * @param total_cents - Total in cents
+   */
+  setCalculatedTotals(subtotal_cents: number, tax_cents: number, total_cents: number): void {
+    if (typeof window === 'undefined') return;
+    sessionStorage.setItem(CALCULATED_SUBTOTAL_KEY, subtotal_cents.toString());
+    sessionStorage.setItem(CALCULATED_TAX_KEY, tax_cents.toString());
+    sessionStorage.setItem(CALCULATED_TOTAL_KEY, total_cents.toString());
+  },
+
+  /**
+   * Get calculated bill totals from sessionStorage
+   * @returns Object with subtotal, tax, and total in cents, or null if not found
+   */
+  getCalculatedTotals(): { subtotal_cents: number; tax_cents: number; total_cents: number } | null {
+    if (typeof window === 'undefined') return null;
+    const subtotal = sessionStorage.getItem(CALCULATED_SUBTOTAL_KEY);
+    const tax = sessionStorage.getItem(CALCULATED_TAX_KEY);
+    const total = sessionStorage.getItem(CALCULATED_TOTAL_KEY);
+    
+    if (subtotal && tax && total) {
+      return {
+        subtotal_cents: parseInt(subtotal, 10),
+        tax_cents: parseInt(tax, 10),
+        total_cents: parseInt(total, 10),
+      };
+    }
+    return null;
+  },
+
+  /**
    * Clear all session data from sessionStorage
    */
   clearSessionData(): void {
@@ -164,6 +200,9 @@ export const sessionStorageUtils = {
     sessionStorage.removeItem(VENUE_SLUG_KEY);
     sessionStorage.removeItem(SESSION_EXPIRES_AT_KEY);
     sessionStorage.removeItem(FULL_SESSION_DATA_KEY);
+    sessionStorage.removeItem(CALCULATED_SUBTOTAL_KEY);
+    sessionStorage.removeItem(CALCULATED_TAX_KEY);
+    sessionStorage.removeItem(CALCULATED_TOTAL_KEY);
   },
 };
 

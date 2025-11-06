@@ -26,12 +26,17 @@ const Payment: React.FC = () => {
     if (sessionData) {
       setCurrency(sessionData.venue.currency);
       
-      if (sessionData.bill) {
+      // First, try to get calculated totals from Checkout page
+      const calculatedTotals = sessionStorageUtils.getCalculatedTotals();
+      if (calculatedTotals) {
+        setSubtotal(calculatedTotals.subtotal_cents);
+        setTax(calculatedTotals.tax_cents);
+        setTotal(calculatedTotals.total_cents);
+      } else if (sessionData.bill) {
+        // Fallback to session bill data if calculated totals not available
         setSubtotal(sessionData.bill.subtotal_cents);
         setTax(sessionData.bill.tax_cents);
-        // Calculate total without tip first
-        const baseTotal = sessionData.bill.total_cents;
-        setTotal(baseTotal);
+        setTotal(sessionData.bill.total_cents);
       }
     }
   }, []);

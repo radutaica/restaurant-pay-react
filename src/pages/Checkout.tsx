@@ -112,6 +112,8 @@ const Checkout: React.FC = () => {
   }, [billItems]);
 
   const handlePayNow = () => {
+    // Store calculated totals in sessionStorage before navigating
+    sessionStorageUtils.setCalculatedTotals(subtotal, tax, total);
     navigate('/payment');
   };
 
