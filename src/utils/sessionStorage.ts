@@ -12,6 +12,10 @@ const FULL_SESSION_DATA_KEY = 'bill_session_data';
 const CALCULATED_SUBTOTAL_KEY = 'calculated_subtotal_cents';
 const CALCULATED_TAX_KEY = 'calculated_tax_cents';
 const CALCULATED_TOTAL_KEY = 'calculated_total_cents';
+const PAYMENT_METHOD_KEY = 'payment_method';
+const PAYMENT_TIP_AMOUNT_KEY = 'payment_tip_amount_cents';
+const PAYMENT_TOTAL_KEY = 'payment_total_cents';
+const PAYMENT_TIME_KEY = 'payment_time';
 
 export const sessionStorageUtils = {
   /**
@@ -189,6 +193,42 @@ export const sessionStorageUtils = {
   },
 
   /**
+   * Store payment details after successful payment
+   * @param paymentMethod - Payment method used (apple, google, card)
+   * @param tipAmount_cents - Tip amount in cents
+   * @param total_cents - Total amount paid in cents
+   */
+  setPaymentDetails(paymentMethod: string, tipAmount_cents: number, total_cents: number): void {
+    if (typeof window === 'undefined') return;
+    sessionStorage.setItem(PAYMENT_METHOD_KEY, paymentMethod);
+    sessionStorage.setItem(PAYMENT_TIP_AMOUNT_KEY, tipAmount_cents.toString());
+    sessionStorage.setItem(PAYMENT_TOTAL_KEY, total_cents.toString());
+    sessionStorage.setItem(PAYMENT_TIME_KEY, new Date().toISOString());
+  },
+
+  /**
+   * Get payment details from sessionStorage
+   * @returns Object with payment details or null if not found
+   */
+  getPaymentDetails(): { paymentMethod: string; tipAmount_cents: number; total_cents: number; paymentTime: string } | null {
+    if (typeof window === 'undefined') return null;
+    const paymentMethod = sessionStorage.getItem(PAYMENT_METHOD_KEY);
+    const tipAmount = sessionStorage.getItem(PAYMENT_TIP_AMOUNT_KEY);
+    const total = sessionStorage.getItem(PAYMENT_TOTAL_KEY);
+    const paymentTime = sessionStorage.getItem(PAYMENT_TIME_KEY);
+    
+    if (paymentMethod && tipAmount && total && paymentTime) {
+      return {
+        paymentMethod,
+        tipAmount_cents: parseInt(tipAmount, 10),
+        total_cents: parseInt(total, 10),
+        paymentTime,
+      };
+    }
+    return null;
+  },
+
+  /**
    * Clear all session data from sessionStorage
    */
   clearSessionData(): void {
@@ -203,6 +243,10 @@ export const sessionStorageUtils = {
     sessionStorage.removeItem(CALCULATED_SUBTOTAL_KEY);
     sessionStorage.removeItem(CALCULATED_TAX_KEY);
     sessionStorage.removeItem(CALCULATED_TOTAL_KEY);
+    sessionStorage.removeItem(PAYMENT_METHOD_KEY);
+    sessionStorage.removeItem(PAYMENT_TIP_AMOUNT_KEY);
+    sessionStorage.removeItem(PAYMENT_TOTAL_KEY);
+    sessionStorage.removeItem(PAYMENT_TIME_KEY);
   },
 };
 

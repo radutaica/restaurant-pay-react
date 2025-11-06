@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import PaymentHeader from '../components/PaymentHeader';
 import Card from '../components/Card';
 import PaymentMethodButton from '../components/PaymentMethodButton';
@@ -11,6 +12,7 @@ type PaymentMethod = 'apple' | 'google' | 'card';
 type TipOption = 'none' | '5' | '10' | '15' | 'custom';
 
 const Payment: React.FC = () => {
+  const navigate = useNavigate();
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('google');
   const [tipOption, setTipOption] = useState<TipOption>('none');
   const [customTip, setCustomTip] = useState<string>('');
@@ -63,12 +65,10 @@ const Payment: React.FC = () => {
   };
 
   const handlePay = () => {
-    // TODO: Implement payment processing
-    console.log('Processing payment...', {
-      paymentMethod,
-      tipAmount,
-      total,
-    });
+    // Store payment details before navigating to confirmation
+    sessionStorageUtils.setPaymentDetails(paymentMethod, tipAmount, total);
+    // Navigate to payment confirmation page
+    navigate('/payment-confirmation');
   };
 
   return (

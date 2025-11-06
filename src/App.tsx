@@ -5,6 +5,7 @@ import UnderConstruction from './pages/UnderConstruction';
 import Checkout from './pages/Checkout';
 import CheckoutFormPage from './pages/CheckoutFormPage';
 import Payment from './pages/Payment';
+import PaymentConfirmation from './pages/PaymentConfirmation';
 
 const App: React.FC = () => {
   const [isMobile, setIsMobile] = useState<boolean>(false);
@@ -23,6 +24,7 @@ const App: React.FC = () => {
             <Route path="/t/:slug" element={<Home />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/payment" element={<Payment />} />
+            <Route path="/payment-confirmation" element={<PaymentConfirmation />} />
             <Route path="/checkoutform" element={<CheckoutFormPage />} />
           </>
         ) : (
