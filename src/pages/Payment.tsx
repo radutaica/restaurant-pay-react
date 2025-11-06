@@ -65,10 +65,10 @@ const Payment: React.FC = () => {
   };
 
   const handlePay = () => {
-    // Store payment details before navigating to confirmation
+    // Store payment details before navigating
     sessionStorageUtils.setPaymentDetails(paymentMethod, tipAmount, total);
-    // Navigate to payment confirmation page
-    navigate('/payment-confirmation');
+    // Navigate to checkout form page
+    navigate('/checkoutform');
   };
 
   return (

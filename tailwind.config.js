@@ -21,6 +21,10 @@ module.exports = {
           white: '#ffffff',
           offWhite: '#fafbfc',
         },
+        border: {
+          light: '#e5e7eb',
+          medium: '#d1d5db',
+        },
       },
       boxShadow: {
         'card': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
