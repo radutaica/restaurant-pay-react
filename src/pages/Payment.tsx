@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, PaymentRequestButtonElement, useStripe } from '@stripe/react-stripe-js';
 import PaymentHeader from '../components/PaymentHeader';
 import Card from '../components/Card';
 import PaymentMethodButton from '../components/PaymentMethodButton';
@@ -7,9 +9,165 @@ import TipButton from '../components/TipButton';
 import PrimaryButton from '../components/PrimaryButton';
 import { ApplePayIcon, GooglePayIcon, CreditCardIcon } from '../components/paymentIcons';
 import { sessionStorageUtils } from '../utils/sessionStorage';
+import { PaymentService } from '../api';
+
+// Load Stripe
+const stripePromise = loadStripe('pk_test_51Q4n7pKc7qc8vhebMAaJl8f41z4a1KSK3ofSeno1K2D62AH5DyWfzWSwkQgt0cbSg2GKG3G2tEeHns2Kg2OQVtJN00pfcNCBwe');
 
 type PaymentMethod = 'apple' | 'google' | 'card';
 type TipOption = 'none' | '5' | '10' | '15' | 'custom';
+
+// Helper to convert currency to Stripe format
+const getStripeCurrency = (currency: string): string => {
+  const currencyMap: { [key: string]: string } = {
+    'ron': 'ron',
+    'usd': 'usd',
+    'eur': 'eur',
+  };
+  return currencyMap[currency.toLowerCase()] || 'usd';
+};
+
+// Helper to get country from currency
+const getCountryFromCurrency = (currency: string): string => {
+  const currencyCountryMap: { [key: string]: string } = {
+    'ron': 'RO',
+    'usd': 'US',
+    'eur': 'DE',
+  };
+  return currencyCountryMap[currency.toLowerCase()] || 'US';
+};
+
+// Payment Request Button Component for Apple Pay / Google Pay
+const WalletPaymentButton: React.FC<{
+  amount: number;
+  currency: string;
+  tipAmount: number;
+  onSuccess: () => void;
+  onError: (error: string) => void;
+}> = ({ amount, currency, tipAmount, onSuccess, onError }) => {
+  const stripe = useStripe();
+  const [paymentRequest, setPaymentRequest] = useState<any>(null);
+  const [canMakePayment, setCanMakePayment] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Initialize payment request
+  useEffect(() => {
+    if (!stripe) {
+      setIsLoading(false);
+      return;
+    }
+
+    let isMounted = true;
+
+    const pr = stripe.paymentRequest({
+      country: getCountryFromCurrency(currency),
+      currency: getStripeCurrency(currency),
+      total: {
+        label: 'Total',
+        amount: amount,
+      },
+      requestPayerName: true,
+      requestPayerEmail: true,
+    });
+
+    // Check if Apple Pay / Google Pay is available
+    pr.canMakePayment().then((result: any) => {
+      if (!isMounted) return;
+      
+      if (result) {
+        setPaymentRequest(pr);
+        setCanMakePayment(true);
+      } else {
+        setCanMakePayment(false);
+      }
+      setIsLoading(false);
+    }).catch((error) => {
+      console.error('Error checking payment availability:', error);
+      if (isMounted) {
+        setCanMakePayment(false);
+        setIsLoading(false);
+      }
+    });
+
+    // Handle payment method selection
+    pr.on('paymentmethod', async (ev: any) => {
+      try {
+        // Create payment intent via backend
+        const response = await PaymentService.createPaymentIntent({ amount });
+        
+        // Confirm payment with Stripe
+        const { error: confirmError } = await stripe.confirmCardPayment(
+          response.client_secret,
+          {
+            payment_method: ev.paymentMethod.id,
+          },
+          { handleActions: false }
+        );
+
+        if (confirmError) {
+          ev.complete('fail');
+          onError(confirmError.message || 'Payment failed');
+        } else {
+          // Store payment details with tip
+          sessionStorageUtils.setPaymentDetails('wallet', tipAmount, amount);
+          ev.complete('success');
+          onSuccess();
+        }
+      } catch (error: any) {
+        ev.complete('fail');
+        onError(error.message || 'Payment failed');
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [stripe, currency]);
+
+  // Update payment request amount when it changes
+  useEffect(() => {
+    if (paymentRequest) {
+      paymentRequest.update({
+        total: {
+          label: 'Total',
+          amount: amount,
+        },
+      });
+    }
+  }, [paymentRequest, amount]);
+
+  if (isLoading) {
+    return (
+      <div className="mt-4 text-center text-text-light text-sm">
+        Checking payment options...
+      </div>
+    );
+  }
+
+  if (!canMakePayment || !paymentRequest) {
+    return (
+      <div className="mt-4 text-center text-text-light text-sm">
+        Apple Pay / Google Pay is not available on this device or browser.
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full mt-4">
+      <PaymentRequestButtonElement
+        options={{
+          paymentRequest,
+          style: {
+            paymentRequestButton: {
+              theme: 'dark',
+              height: '48px',
+            },
+          },
+        }}
+      />
+    </div>
+  );
+};
 
 const Payment: React.FC = () => {
   const navigate = useNavigate();
@@ -21,6 +179,7 @@ const Payment: React.FC = () => {
   const [tipAmount, setTipAmount] = useState<number>(0);
   const [total, setTotal] = useState<number>(13923); // in cents
   const [currency, setCurrency] = useState<string>('ron');
+  const [paymentError, setPaymentError] = useState<string>('');
 
   // Load session data and calculate totals
   useEffect(() => {
@@ -65,42 +224,79 @@ const Payment: React.FC = () => {
   };
 
   const handlePay = () => {
-    // Store payment details before navigating
-    sessionStorageUtils.setPaymentDetails(paymentMethod, tipAmount, total);
-    // Navigate to checkout form page
-    navigate('/checkoutform');
+    if (paymentMethod === 'card') {
+      // Store payment details before navigating
+      sessionStorageUtils.setPaymentDetails(paymentMethod, tipAmount, total);
+      // Navigate to checkout form page
+      navigate('/checkoutform');
+    }
+    // For Apple Pay / Google Pay, the WalletPaymentButton handles the payment
+  };
+
+  const handleWalletPaymentSuccess = () => {
+    navigate('/payment-confirmation');
+  };
+
+  const handleWalletPaymentError = (error: string) => {
+    setPaymentError(error);
   };
 
   return (
-    <div className="min-h-screen bg-background-light flex flex-col">
-      {/* Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto px-4 pt-8 pb-32">
-        <div className="w-full max-w-lg mx-auto">
-          <PaymentHeader />
+    <Elements stripe={stripePromise}>
+      <div className="min-h-screen bg-background-light flex flex-col">
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-y-auto px-4 pt-8 pb-32">
+          <div className="w-full max-w-lg mx-auto">
+            <PaymentHeader />
 
-          {/* Select Payment Method Card */}
-          <Card title="Select payment method">
-            <div className="space-y-3">
-              <PaymentMethodButton
-                icon={<ApplePayIcon />}
-                label="Apple Pay"
-                selected={paymentMethod === 'apple'}
-                onClick={() => setPaymentMethod('apple')}
-              />
-              <PaymentMethodButton
-                icon={<GooglePayIcon />}
-                label="Google Pay"
-                selected={paymentMethod === 'google'}
-                onClick={() => setPaymentMethod('google')}
-              />
-              <PaymentMethodButton
-                icon={<CreditCardIcon />}
-                label="Credit/Debit Card"
-                selected={paymentMethod === 'card'}
-                onClick={() => setPaymentMethod('card')}
-              />
-            </div>
-          </Card>
+            {/* Select Payment Method Card */}
+            <Card title="Select payment method">
+              <div className="space-y-3">
+                <PaymentMethodButton
+                  icon={<ApplePayIcon />}
+                  label="Apple Pay"
+                  selected={paymentMethod === 'apple'}
+                  onClick={() => {
+                    setPaymentMethod('apple');
+                    setPaymentError('');
+                  }}
+                />
+                <PaymentMethodButton
+                  icon={<GooglePayIcon />}
+                  label="Google Pay"
+                  selected={paymentMethod === 'google'}
+                  onClick={() => {
+                    setPaymentMethod('google');
+                    setPaymentError('');
+                  }}
+                />
+                <PaymentMethodButton
+                  icon={<CreditCardIcon />}
+                  label="Credit/Debit Card"
+                  selected={paymentMethod === 'card'}
+                  onClick={() => {
+                    setPaymentMethod('card');
+                    setPaymentError('');
+                  }}
+                />
+              </div>
+              
+              {/* Stripe Payment Request Button for Apple Pay / Google Pay */}
+              {(paymentMethod === 'apple' || paymentMethod === 'google') && (
+                <WalletPaymentButton
+                  amount={total}
+                  currency={currency}
+                  tipAmount={tipAmount}
+                  onSuccess={handleWalletPaymentSuccess}
+                  onError={handleWalletPaymentError}
+                />
+              )}
+              
+              {/* Error message */}
+              {paymentError && (
+                <div className="mt-4 text-red-500 text-sm text-center">{paymentError}</div>
+              )}
+            </Card>
 
           {/* Add a Tip Card */}
           <Card title="Add a tip">
@@ -207,18 +403,21 @@ const Payment: React.FC = () => {
             </svg>
             <span>Payments are processed securely by Stripe.</span>
           </div>
+          </div>
         </div>
-      </div>
 
-      {/* Fixed Pay Button at Bottom */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background-light border-t border-border-light px-4 py-4 shadow-lg z-10">
-        <div className="w-full max-w-lg mx-auto">
-          <PrimaryButton onClick={handlePay}>
-            Pay {formatPrice(total)}
-          </PrimaryButton>
-        </div>
+        {/* Fixed Pay Button at Bottom - Only show for card payments */}
+        {paymentMethod === 'card' && (
+          <div className="fixed bottom-0 left-0 right-0 bg-background-light border-t border-border-light px-4 py-4 shadow-lg z-10">
+            <div className="w-full max-w-lg mx-auto">
+              <PrimaryButton onClick={handlePay}>
+                Pay {formatPrice(total)}
+              </PrimaryButton>
+            </div>
+          </div>
+        )}
       </div>
-    </div>
+    </Elements>
   );
 };
 
