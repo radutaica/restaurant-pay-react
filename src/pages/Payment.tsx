@@ -74,11 +74,17 @@ const WalletPaymentButton: React.FC<{
     pr.canMakePayment().then((result: any) => {
       if (!isMounted) return;
       
-      if (result) {
+      // Check specifically for Apple Pay or Google Pay (not just Link)
+      const hasApplePay = result?.applePay === true;
+      const hasGooglePay = result?.googlePay === true;
+      
+      if (result && (hasApplePay || hasGooglePay)) {
         setPaymentRequest(pr);
         setCanMakePayment(true);
+        console.log('Apple Pay/Google Pay available:', { hasApplePay, hasGooglePay });
       } else {
         setCanMakePayment(false);
+        console.log('Apple Pay/Google Pay not available. Result:', result);
       }
       setIsLoading(false);
     }).catch((error) => {
@@ -146,25 +152,37 @@ const WalletPaymentButton: React.FC<{
 
   if (!canMakePayment || !paymentRequest) {
     return (
-      <div className="mt-4 text-center text-text-light text-sm">
-        Apple Pay / Google Pay is not available on this device or browser.
+      <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <p className="text-sm text-yellow-800 text-center">
+          <strong>Apple Pay / Google Pay is not available</strong>
+          <br />
+          <span className="text-xs mt-1 block">
+            Please use Safari (for Apple Pay) or Chrome (for Google Pay) on a supported device.
+          </span>
+        </p>
       </div>
     );
   }
 
   return (
     <div className="w-full mt-4">
-      <PaymentRequestButtonElement
-        options={{
-          paymentRequest,
-          style: {
-            paymentRequestButton: {
-              theme: 'dark',
-              height: '48px',
+      {/* Stripe's official Payment Request Button - automatically shows Apple Pay or Google Pay */}
+      <div className="border border-border-light rounded-lg p-2 bg-background-white">
+        <PaymentRequestButtonElement
+          options={{
+            paymentRequest,
+            style: {
+              paymentRequestButton: {
+                theme: 'dark',
+                height: '48px',
+              },
             },
-          },
-        }}
-      />
+          }}
+        />
+      </div>
+      <p className="text-xs text-text-light text-center mt-2">
+        Click the button above to complete your payment
+      </p>
     </div>
   );
 };
