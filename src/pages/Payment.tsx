@@ -7,14 +7,14 @@ import Card from '../components/Card';
 import PaymentMethodButton from '../components/PaymentMethodButton';
 import TipButton from '../components/TipButton';
 import PrimaryButton from '../components/PrimaryButton';
-import { ApplePayIcon, GooglePayIcon, CreditCardIcon } from '../components/paymentIcons';
+import { CreditCardIcon } from '../components/paymentIcons';
 import { sessionStorageUtils } from '../utils/sessionStorage';
 import { PaymentService } from '../api';
 
 // Load Stripe
 const stripePromise = loadStripe('pk_test_51Q4n7pKc7qc8vhebMAaJl8f41z4a1KSK3ofSeno1K2D62AH5DyWfzWSwkQgt0cbSg2GKG3G2tEeHns2Kg2OQVtJN00pfcNCBwe');
 
-type PaymentMethod = 'apple' | 'google' | 'card';
+type PaymentMethod = 'card';
 type TipOption = 'none' | '5' | '10' | '15' | 'custom';
 
 // Helper to convert currency to Stripe format
@@ -150,23 +150,14 @@ const WalletPaymentButton: React.FC<{
     );
   }
 
+  // Don't show anything if payment is not available - the button won't render
   if (!canMakePayment || !paymentRequest) {
-    return (
-      <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-        <p className="text-sm text-yellow-800 text-center">
-          <strong>Apple Pay / Google Pay is not available</strong>
-          <br />
-          <span className="text-xs mt-1 block">
-            Please use Safari (for Apple Pay) or Chrome (for Google Pay) on a supported device.
-          </span>
-        </p>
-      </div>
-    );
+    return null;
   }
 
   return (
     <div className="w-full mt-4">
-      {/* Stripe's official Payment Request Button - automatically shows Apple Pay or Google Pay */}
+      {/* Stripe's official Payment Request Button - automatically shows Apple Pay on iOS or Google Pay on Android */}
       <div className="border border-border-light rounded-lg p-2 bg-background-white">
         <PaymentRequestButtonElement
           options={{
@@ -180,16 +171,13 @@ const WalletPaymentButton: React.FC<{
           }}
         />
       </div>
-      <p className="text-xs text-text-light text-center mt-2">
-        Click the button above to complete your payment
-      </p>
     </div>
   );
 };
 
 const Payment: React.FC = () => {
   const navigate = useNavigate();
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('google');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
   const [tipOption, setTipOption] = useState<TipOption>('none');
   const [customTip, setCustomTip] = useState<string>('');
   const [subtotal, setSubtotal] = useState<number>(11700); // in cents
@@ -269,25 +257,16 @@ const Payment: React.FC = () => {
 
             {/* Select Payment Method Card */}
             <Card title="Select payment method">
-              <div className="space-y-3">
-                <PaymentMethodButton
-                  icon={<ApplePayIcon />}
-                  label="Apple Pay"
-                  selected={paymentMethod === 'apple'}
-                  onClick={() => {
-                    setPaymentMethod('apple');
-                    setPaymentError('');
-                  }}
-                />
-                <PaymentMethodButton
-                  icon={<GooglePayIcon />}
-                  label="Google Pay"
-                  selected={paymentMethod === 'google'}
-                  onClick={() => {
-                    setPaymentMethod('google');
-                    setPaymentError('');
-                  }}
-                />
+              {/* Stripe Payment Request Button - automatically shows Apple Pay on iOS or Google Pay on Android when available */}
+              <WalletPaymentButton
+                amount={total}
+                currency={currency}
+                tipAmount={tipAmount}
+                onSuccess={handleWalletPaymentSuccess}
+                onError={handleWalletPaymentError}
+              />
+              
+              <div className="mt-4 space-y-3">
                 <PaymentMethodButton
                   icon={<CreditCardIcon />}
                   label="Credit/Debit Card"
@@ -298,17 +277,6 @@ const Payment: React.FC = () => {
                   }}
                 />
               </div>
-              
-              {/* Stripe Payment Request Button for Apple Pay / Google Pay */}
-              {(paymentMethod === 'apple' || paymentMethod === 'google') && (
-                <WalletPaymentButton
-                  amount={total}
-                  currency={currency}
-                  tipAmount={tipAmount}
-                  onSuccess={handleWalletPaymentSuccess}
-                  onError={handleWalletPaymentError}
-                />
-              )}
               
               {/* Error message */}
               {paymentError && (
