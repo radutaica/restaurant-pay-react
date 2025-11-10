@@ -6,6 +6,7 @@ import Checkout from './pages/Checkout';
 import CheckoutFormPage from './pages/CheckoutFormPage';
 import Payment from './pages/Payment';
 import PaymentConfirmation from './pages/PaymentConfirmation';
+import SplitBill from './pages/SplitBill';
 
 const App: React.FC = () => {
   const [isMobile, setIsMobile] = useState<boolean>(false);
@@ -26,6 +27,7 @@ const App: React.FC = () => {
             <Route path="/payment" element={<Payment />} />
             <Route path="/payment-confirmation" element={<PaymentConfirmation />} />
             <Route path="/checkoutform" element={<CheckoutFormPage />} />
+            <Route path="/split-bill" element={<SplitBill />} />
           </>
         ) : (
           <Route path="/" element={<UnderConstruction />} />

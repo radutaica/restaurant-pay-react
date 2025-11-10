@@ -118,8 +118,9 @@ const Checkout: React.FC = () => {
   };
 
   const handleSplitBill = () => {
-    // TODO: Implement split bill functionality
-    console.log('Split bill functionality to be implemented');
+    // Store calculated totals in sessionStorage before navigating
+    sessionStorageUtils.setCalculatedTotals(subtotal, tax, total);
+    navigate('/split-bill');
   };
 
   return (

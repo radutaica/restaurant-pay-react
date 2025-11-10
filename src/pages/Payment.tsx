@@ -193,17 +193,35 @@ const Payment: React.FC = () => {
     if (sessionData) {
       setCurrency(sessionData.venue.currency);
       
-      // First, try to get calculated totals from Checkout page
-      const calculatedTotals = sessionStorageUtils.getCalculatedTotals();
-      if (calculatedTotals) {
-        setSubtotal(calculatedTotals.subtotal_cents);
-        setTax(calculatedTotals.tax_cents);
-        setTotal(calculatedTotals.total_cents);
-      } else if (sessionData.bill) {
-        // Fallback to session bill data if calculated totals not available
-        setSubtotal(sessionData.bill.subtotal_cents);
-        setTax(sessionData.bill.tax_cents);
-        setTotal(sessionData.bill.total_cents);
+      // Check if this is a split bill payment
+      const splitAmount = sessionStorage.getItem('splitAmount_cents');
+      
+      if (splitAmount) {
+        // Use the split amount as the total
+        const splitAmountCents = parseInt(splitAmount, 10);
+        setTotal(splitAmountCents);
+        // For split bills, we'll use the split amount directly
+        // Subtotal and tax are calculated proportionally if needed
+        const calculatedTotals = sessionStorageUtils.getCalculatedTotals();
+        if (calculatedTotals) {
+          // Calculate proportional subtotal and tax based on split amount
+          const splitRatio = splitAmountCents / calculatedTotals.total_cents;
+          setSubtotal(Math.round(calculatedTotals.subtotal_cents * splitRatio));
+          setTax(Math.round(calculatedTotals.tax_cents * splitRatio));
+        }
+      } else {
+        // First, try to get calculated totals from Checkout page
+        const calculatedTotals = sessionStorageUtils.getCalculatedTotals();
+        if (calculatedTotals) {
+          setSubtotal(calculatedTotals.subtotal_cents);
+          setTax(calculatedTotals.tax_cents);
+          setTotal(calculatedTotals.total_cents);
+        } else if (sessionData.bill) {
+          // Fallback to session bill data if calculated totals not available
+          setSubtotal(sessionData.bill.subtotal_cents);
+          setTax(sessionData.bill.tax_cents);
+          setTotal(sessionData.bill.total_cents);
+        }
       }
     }
   }, []);
