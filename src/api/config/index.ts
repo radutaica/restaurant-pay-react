@@ -1,7 +1,7 @@
 // API Configuration
 
 export const API_CONFIG = {
-  BASE_URL: 'https://b7985d894b1c.ngrok-free.app',
+  BASE_URL: 'https://e2b01ac5f42d.ngrok-free.app',
   TIMEOUT: 10000, // 10 seconds
   HEADERS: {
     'Content-Type': 'application/json',
