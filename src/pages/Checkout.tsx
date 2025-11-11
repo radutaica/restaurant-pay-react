@@ -30,6 +30,13 @@ const Checkout: React.FC = () => {
       setTableName(sessionData.table.name);
       setCurrency(sessionData.venue.currency);
 
+      // Use bill data directly from API response
+      if (sessionData.bill) {
+        setSubtotal(sessionData.bill.subtotal_cents);
+        setTax(sessionData.bill.tax_cents);
+        setTotal(sessionData.bill.total_cents);
+      }
+
       // Fetch bill items from API
       const tableId = sessionStorageUtils.getTableId();
       if (tableId) {
@@ -74,52 +81,16 @@ const Checkout: React.FC = () => {
             console.error('Error fetching bill items:', error);
             setItemsError('Failed to load bill items. Please try again.');
             setIsLoadingItems(false);
-            
-            // Fallback to session bill data if API fails
-            if (sessionData.bill) {
-              setSubtotal(sessionData.bill.subtotal_cents);
-              setTax(sessionData.bill.tax_cents);
-              setTotal(sessionData.bill.total_cents);
-            }
           });
-      } else if (sessionData.bill) {
-        // Fallback: use session bill data if no tableId
-        setSubtotal(sessionData.bill.subtotal_cents);
-        setTax(sessionData.bill.tax_cents);
-        setTotal(sessionData.bill.total_cents);
       }
     }
   }, []);
 
-  // Calculate subtotal, tax, and total from bill items
-  useEffect(() => {
-    if (billItems.length > 0) {
-      // Calculate subtotal: sum of (price * quantity) for each item
-      const subtotalCents = billItems.reduce((sum, item) => {
-        return sum + (item.price_cents * item.quantity);
-      }, 0);
-      
-      // Tax calculation (19% VAT - common in Romania)
-      const taxCents = Math.round(subtotalCents * 0.19);
-      
-      // Total = subtotal + tax
-      const totalCents = subtotalCents + taxCents;
-
-      setSubtotal(subtotalCents);
-      setTax(taxCents);
-      setTotal(totalCents);
-    }
-  }, [billItems]);
-
   const handlePayNow = () => {
-    // Store calculated totals in sessionStorage before navigating
-    sessionStorageUtils.setCalculatedTotals(subtotal, tax, total);
     navigate('/payment');
   };
 
   const handleSplitBill = () => {
-    // Store calculated totals in sessionStorage before navigating
-    sessionStorageUtils.setCalculatedTotals(subtotal, tax, total);
     navigate('/split-bill');
   };
 

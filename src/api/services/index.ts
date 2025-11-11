@@ -16,3 +16,8 @@ export type {
   ItemTableRelationItem,
   ItemTableRelationsResponse,
 } from '../types/itemTableRelations';
+
+export type {
+  UpdateTipRequest,
+  UpdateTipResponse,
+} from '../types/billSession';

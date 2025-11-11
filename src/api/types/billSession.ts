@@ -8,6 +8,8 @@ export interface Bill {
   fees_cents: number;
   tip_cents: number;
   total_cents: number;
+  paid_cents?: number;
+  remaining_cents?: number;
   currency: string;
   created_at: string;
   updated_at: string;
@@ -37,5 +39,13 @@ export interface BillSessionResponse {
   table: Table;
   venue: Venue;
   session_info: SessionInfo;
+}
+
+export interface UpdateTipRequest {
+  tip_cents: number;
+}
+
+export interface UpdateTipResponse {
+  bill: Bill;
 }
 

@@ -15,26 +15,18 @@ const SplitBill: React.FC = () => {
   const [perPersonAmount, setPerPersonAmount] = useState<number>(0); // in cents
   const [remaining, setRemaining] = useState<number>(0); // in cents
 
-  // Load session data and calculate totals from checkout page
+  // Load session data and use bill totals from API
   useEffect(() => {
-    // First, try to get calculated totals from Checkout page (this is the source of truth)
-    const calculatedTotals = sessionStorageUtils.getCalculatedTotals();
-    
-    // Get currency and fallback total from session data
     const sessionData = sessionStorageUtils.getFullSessionData();
     
     if (sessionData) {
       setCurrency(sessionData.venue.currency);
-    }
-    
-    // Prioritize calculated totals from checkout page
-    if (calculatedTotals && calculatedTotals.total_cents > 0) {
-      setTotal(calculatedTotals.total_cents);
-      setRemaining(calculatedTotals.total_cents);
-    } else if (sessionData && sessionData.bill && sessionData.bill.total_cents > 0) {
-      // Fallback to session bill data if calculated totals not available
-      setTotal(sessionData.bill.total_cents);
-      setRemaining(sessionData.bill.total_cents);
+      
+      // Use bill data directly from API response
+      if (sessionData.bill && sessionData.bill.total_cents > 0) {
+        setTotal(sessionData.bill.total_cents);
+        setRemaining(sessionData.bill.total_cents);
+      }
     }
   }, []);
 

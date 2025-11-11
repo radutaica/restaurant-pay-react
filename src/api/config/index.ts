@@ -18,6 +18,7 @@ export const API_ENDPOINTS = {
   },
   BILL_SESSION: {
     CREATE_SESSION: (slug: string) => `/t/${slug}`,
+    UPDATE_TIP: '/bills/update_tip',
   },
   ITEM_TABLE_RELATIONS: {
     GET_BY_TABLE: '/users/item_table_relations',
