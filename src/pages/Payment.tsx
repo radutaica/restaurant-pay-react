@@ -42,9 +42,11 @@ const WalletPaymentButton: React.FC<{
   amount: number;
   currency: string;
   tipAmount: number;
+  requestedAmount: number;
+  kind: 'full' | 'equal_split' | 'custom';
   onSuccess: () => void;
   onError: (error: string) => void;
-}> = ({ amount, currency, tipAmount, onSuccess, onError }) => {
+}> = ({ amount, currency, tipAmount, requestedAmount, kind, onSuccess, onError }) => {
   const stripe = useStripe();
   const [paymentRequest, setPaymentRequest] = useState<any>(null);
   const [canMakePayment, setCanMakePayment] = useState(false);
@@ -98,8 +100,13 @@ const WalletPaymentButton: React.FC<{
     // Handle payment method selection
     pr.on('paymentmethod', async (ev: any) => {
       try {
-        // Create payment intent via backend
-        const response = await PaymentService.createPaymentIntent({ amount });
+        // Create payment intent via backend with requested_amount_cents, tip_cents, and kind
+        const response = await PaymentService.createPaymentIntent({ 
+          amount,
+          requested_amount_cents: requestedAmount,
+          tip_cents: tipAmount,
+          kind
+        });
         
         // Confirm payment with Stripe
         const { error: confirmError } = await stripe.confirmCardPayment(
@@ -114,8 +121,8 @@ const WalletPaymentButton: React.FC<{
           ev.complete('fail');
           onError(confirmError.message || 'Payment failed');
         } else {
-          // Store payment details with tip
-          sessionStorageUtils.setPaymentDetails('wallet', tipAmount, amount);
+          // Store payment details with tip, kind, and requested amount
+          sessionStorageUtils.setPaymentDetails('wallet', tipAmount, amount, kind, requestedAmount);
           ev.complete('success');
           onSuccess();
         }
@@ -128,7 +135,7 @@ const WalletPaymentButton: React.FC<{
     return () => {
       isMounted = false;
     };
-  }, [stripe, currency]);
+  }, [stripe, currency, requestedAmount, tipAmount, kind]);
 
   // Update payment request amount when it changes
   useEffect(() => {
@@ -188,29 +195,49 @@ const Payment: React.FC = () => {
   const [paymentError, setPaymentError] = useState<string>('');
   const [tipUpdateLoading, setTipUpdateLoading] = useState<boolean>(false);
   const [tipUpdateError, setTipUpdateError] = useState<string>('');
+  const [baseSplitAmount, setBaseSplitAmount] = useState<number | null>(null); // Store base split amount (without tip)
+  const [paymentKind, setPaymentKind] = useState<'full' | 'equal_split' | 'custom'>('full');
+  const [requestedAmount, setRequestedAmount] = useState<number>(0); // Requested amount before tip
 
   // Load session data and use bill totals from API
   useEffect(() => {
     const sessionData = sessionStorageUtils.getFullSessionData();
+    const paymentDetails = sessionStorageUtils.getPaymentDetails();
+    
     if (sessionData) {
       setCurrency(sessionData.venue.currency);
+      
+      // Load payment kind and requested amount from payment details if available
+      if (paymentDetails) {
+        if (paymentDetails.kind) {
+          setPaymentKind(paymentDetails.kind);
+        }
+        if (paymentDetails.requested_amount_cents !== undefined) {
+          setRequestedAmount(paymentDetails.requested_amount_cents);
+        }
+      }
       
       // Check if this is a split bill payment
       const splitAmount = sessionStorage.getItem('splitAmount_cents');
       
       if (splitAmount && sessionData.bill) {
-        // Use the split amount as the total
+        // Use the split amount as the base amount (without tip)
         const splitAmountCents = parseInt(splitAmount, 10);
+        setBaseSplitAmount(splitAmountCents);
         setTotal(splitAmountCents);
+        setRequestedAmount(splitAmountCents);
         // For split bills, calculate proportional subtotal and tax based on split amount
         const splitRatio = splitAmountCents / sessionData.bill.total_cents;
         setSubtotal(Math.round(sessionData.bill.subtotal_cents * splitRatio));
         setTax(Math.round(sessionData.bill.tax_cents * splitRatio));
       } else if (sessionData.bill) {
         // Use bill data directly from API response
+        setBaseSplitAmount(null); // Not a split bill
         setSubtotal(sessionData.bill.subtotal_cents);
         setTax(sessionData.bill.tax_cents);
         setTotal(sessionData.bill.total_cents);
+        // For full bills, requested amount is subtotal + tax (without tip)
+        setRequestedAmount(sessionData.bill.subtotal_cents + sessionData.bill.tax_cents);
       }
     }
   }, []);
@@ -229,8 +256,14 @@ const Payment: React.FC = () => {
     }
     
     setTipAmount(tip);
-    setTotal(subtotal + tax + tip);
-  }, [tipOption, customTip, subtotal, tax]);
+    
+    // For split bills, use baseSplitAmount + tip; otherwise use subtotal + tax + tip
+    if (baseSplitAmount !== null) {
+      setTotal(baseSplitAmount + tip);
+    } else {
+      setTotal(subtotal + tax + tip);
+    }
+  }, [tipOption, customTip, subtotal, tax, baseSplitAmount]);
 
   // Track if component has mounted to prevent API call on initial mount
   const isInitialMount = useRef<boolean>(true);
@@ -246,15 +279,25 @@ const Payment: React.FC = () => {
       
       // Update local state with API response
       if (response.bill) {
-        // Update all bill-related state from API response
+        // Update tip amount from API response
         setTipAmount(response.bill.tip_cents);
-        setTotal(response.bill.total_cents);
-        // Update subtotal and tax in case they changed (though they shouldn't)
-        if (response.bill.subtotal_cents !== undefined) {
-          setSubtotal(response.bill.subtotal_cents);
+        
+        // For split bills, use baseSplitAmount + tip; otherwise use API response total
+        if (baseSplitAmount !== null) {
+          setTotal(baseSplitAmount + response.bill.tip_cents);
+        } else {
+          setTotal(response.bill.total_cents);
         }
-        if (response.bill.tax_cents !== undefined) {
-          setTax(response.bill.tax_cents);
+        
+        // Update subtotal and tax in case they changed (though they shouldn't)
+        // For split bills, we keep the proportional values, so only update if not a split bill
+        if (baseSplitAmount === null) {
+          if (response.bill.subtotal_cents !== undefined) {
+            setSubtotal(response.bill.subtotal_cents);
+          }
+          if (response.bill.tax_cents !== undefined) {
+            setTax(response.bill.tax_cents);
+          }
         }
         
         // Update sessionStorage with updated bill data
@@ -279,7 +322,7 @@ const Payment: React.FC = () => {
     } finally {
       setTipUpdateLoading(false);
     }
-  }, []); // Empty deps - function doesn't depend on any props/state that change
+  }, [baseSplitAmount]); // Include baseSplitAmount in deps
 
   // Call API to update tip when predefined tip option is selected (excluding custom)
   useEffect(() => {
@@ -349,8 +392,11 @@ const Payment: React.FC = () => {
 
   const handlePay = () => {
     if (paymentMethod === 'card') {
-      // Store payment details before navigating
-      sessionStorageUtils.setPaymentDetails(paymentMethod, tipAmount, total);
+      // Calculate requested amount (base amount before tip)
+      const requestedAmountValue = baseSplitAmount !== null ? baseSplitAmount : (subtotal + tax);
+      
+      // Store payment details before navigating with kind and requested amount
+      sessionStorageUtils.setPaymentDetails(paymentMethod, tipAmount, total, paymentKind, requestedAmountValue);
       // Navigate to checkout form page
       navigate('/checkoutform');
     }
@@ -380,6 +426,8 @@ const Payment: React.FC = () => {
                 amount={total}
                 currency={currency}
                 tipAmount={tipAmount}
+                requestedAmount={requestedAmount}
+                kind={paymentKind}
                 onSuccess={handleWalletPaymentSuccess}
                 onError={handleWalletPaymentError}
               />

@@ -1,7 +1,10 @@
 // Payment API Types
 
 export interface CreatePaymentIntentRequest {
-  amount: number; // Amount in cents
+  amount: number; // Amount in cents (total amount to charge)
+  requested_amount_cents: number; // Requested amount in cents (base amount before tip)
+  tip_cents: number; // Tip amount in cents
+  kind: 'full' | 'equal_split' | 'custom'; // Payment kind: full bill, equal split, or custom amount
 }
 
 export interface CreatePaymentIntentResponse {

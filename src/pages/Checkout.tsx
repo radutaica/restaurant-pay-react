@@ -87,6 +87,11 @@ const Checkout: React.FC = () => {
   }, []);
 
   const handlePayNow = () => {
+    // Store payment details with kind 'full' for full bill payment
+    const sessionData = sessionStorageUtils.getFullSessionData();
+    if (sessionData?.bill) {
+      sessionStorageUtils.setPaymentDetails('card', 0, sessionData.bill.total_cents, 'full', sessionData.bill.total_cents);
+    }
     navigate('/payment');
   };
 

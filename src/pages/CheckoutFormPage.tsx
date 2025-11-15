@@ -21,17 +21,35 @@ const CheckoutFormPage: React.FC = () => {
         const paymentDetails = sessionStorageUtils.getPaymentDetails();
 
         let finalTotal = 4550; // Default fallback
-        if (calculatedTotals) {
-          finalTotal = calculatedTotals.total_cents;
-        } else if (sessionData?.bill) {
-          finalTotal = sessionData.bill.total_cents;
-        }
-        if (paymentDetails && paymentDetails.tipAmount_cents > 0) {
-          const baseTotal = calculatedTotals?.total_cents || sessionData?.bill?.total_cents || 0;
-          finalTotal = baseTotal + paymentDetails.tipAmount_cents;
+        let requestedAmount = 0;
+        let tipAmount = 0;
+        let kind: 'full' | 'equal_split' | 'custom' = 'full';
+
+        // Get payment details if available
+        if (paymentDetails) {
+          finalTotal = paymentDetails.total_cents;
+          tipAmount = paymentDetails.tipAmount_cents;
+          kind = paymentDetails.kind || 'full';
+          requestedAmount = paymentDetails.requested_amount_cents || (finalTotal - tipAmount);
+        } else {
+          // Fallback to calculated totals or bill data
+          if (calculatedTotals) {
+            finalTotal = calculatedTotals.total_cents;
+            requestedAmount = calculatedTotals.subtotal_cents + calculatedTotals.tax_cents;
+            tipAmount = calculatedTotals.total_cents - requestedAmount;
+          } else if (sessionData?.bill) {
+            finalTotal = sessionData.bill.total_cents;
+            requestedAmount = sessionData.bill.subtotal_cents + sessionData.bill.tax_cents;
+            tipAmount = sessionData.bill.tip_cents || 0;
+          }
         }
 
-        const response = await PaymentService.createPaymentIntent({ amount: finalTotal });
+        const response = await PaymentService.createPaymentIntent({ 
+          amount: finalTotal,
+          requested_amount_cents: requestedAmount,
+          tip_cents: tipAmount,
+          kind
+        });
         setClientSecret(response.client_secret);
       } catch (error) {
         console.error('Error fetching payment intent:', error);

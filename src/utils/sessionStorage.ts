@@ -16,6 +16,8 @@ const PAYMENT_METHOD_KEY = 'payment_method';
 const PAYMENT_TIP_AMOUNT_KEY = 'payment_tip_amount_cents';
 const PAYMENT_TOTAL_KEY = 'payment_total_cents';
 const PAYMENT_TIME_KEY = 'payment_time';
+const PAYMENT_KIND_KEY = 'payment_kind';
+const PAYMENT_REQUESTED_AMOUNT_KEY = 'payment_requested_amount_cents';
 
 export const sessionStorageUtils = {
   /**
@@ -197,25 +199,48 @@ export const sessionStorageUtils = {
    * @param paymentMethod - Payment method used (apple, google, card)
    * @param tipAmount_cents - Tip amount in cents
    * @param total_cents - Total amount paid in cents
+   * @param kind - Payment kind ('full', 'equal_split', or 'custom')
+   * @param requested_amount_cents - Requested amount in cents (base amount before tip)
    */
-  setPaymentDetails(paymentMethod: string, tipAmount_cents: number, total_cents: number): void {
+  setPaymentDetails(
+    paymentMethod: string, 
+    tipAmount_cents: number, 
+    total_cents: number, 
+    kind?: 'full' | 'equal_split' | 'custom',
+    requested_amount_cents?: number
+  ): void {
     if (typeof window === 'undefined') return;
     sessionStorage.setItem(PAYMENT_METHOD_KEY, paymentMethod);
     sessionStorage.setItem(PAYMENT_TIP_AMOUNT_KEY, tipAmount_cents.toString());
     sessionStorage.setItem(PAYMENT_TOTAL_KEY, total_cents.toString());
     sessionStorage.setItem(PAYMENT_TIME_KEY, new Date().toISOString());
+    if (kind) {
+      sessionStorage.setItem(PAYMENT_KIND_KEY, kind);
+    }
+    if (requested_amount_cents !== undefined) {
+      sessionStorage.setItem(PAYMENT_REQUESTED_AMOUNT_KEY, requested_amount_cents.toString());
+    }
   },
 
   /**
    * Get payment details from sessionStorage
    * @returns Object with payment details or null if not found
    */
-  getPaymentDetails(): { paymentMethod: string; tipAmount_cents: number; total_cents: number; paymentTime: string } | null {
+  getPaymentDetails(): { 
+    paymentMethod: string; 
+    tipAmount_cents: number; 
+    total_cents: number; 
+    paymentTime: string;
+    kind?: 'full' | 'equal_split' | 'custom';
+    requested_amount_cents?: number;
+  } | null {
     if (typeof window === 'undefined') return null;
     const paymentMethod = sessionStorage.getItem(PAYMENT_METHOD_KEY);
     const tipAmount = sessionStorage.getItem(PAYMENT_TIP_AMOUNT_KEY);
     const total = sessionStorage.getItem(PAYMENT_TOTAL_KEY);
     const paymentTime = sessionStorage.getItem(PAYMENT_TIME_KEY);
+    const kind = sessionStorage.getItem(PAYMENT_KIND_KEY) as 'full' | 'equal_split' | 'custom' | null;
+    const requestedAmount = sessionStorage.getItem(PAYMENT_REQUESTED_AMOUNT_KEY);
     
     if (paymentMethod && tipAmount && total && paymentTime) {
       return {
@@ -223,6 +248,8 @@ export const sessionStorageUtils = {
         tipAmount_cents: parseInt(tipAmount, 10),
         total_cents: parseInt(total, 10),
         paymentTime,
+        kind: kind || undefined,
+        requested_amount_cents: requestedAmount ? parseInt(requestedAmount, 10) : undefined,
       };
     }
     return null;
@@ -247,6 +274,8 @@ export const sessionStorageUtils = {
     sessionStorage.removeItem(PAYMENT_TIP_AMOUNT_KEY);
     sessionStorage.removeItem(PAYMENT_TOTAL_KEY);
     sessionStorage.removeItem(PAYMENT_TIME_KEY);
+    sessionStorage.removeItem(PAYMENT_KIND_KEY);
+    sessionStorage.removeItem(PAYMENT_REQUESTED_AMOUNT_KEY);
   },
 };
 

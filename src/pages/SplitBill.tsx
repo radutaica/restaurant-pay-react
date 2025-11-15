@@ -82,11 +82,14 @@ const SplitBill: React.FC = () => {
 
   const handlePayMyPart = () => {
     let amountCents = 0;
+    let paymentKind: 'equal_split' | 'custom' = 'equal_split';
     
     if (splitMode === 'equal') {
       amountCents = perPersonAmount;
+      paymentKind = 'equal_split';
     } else if (splitMode === 'custom' && customAmount) {
       amountCents = Math.round(parseFloat(customAmount) * 100);
+      paymentKind = 'custom';
     } else {
       return;
     }
@@ -95,8 +98,8 @@ const SplitBill: React.FC = () => {
       return;
     }
     
-    // Store payment details with the split amount
-    sessionStorageUtils.setPaymentDetails('card', 0, amountCents);
+    // Store payment details with the split amount, kind, and requested amount
+    sessionStorageUtils.setPaymentDetails('card', 0, amountCents, paymentKind, amountCents);
     
     // Store the split amount for later use
     sessionStorage.setItem('splitAmount_cents', amountCents.toString());
