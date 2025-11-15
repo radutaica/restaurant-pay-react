@@ -37,30 +37,12 @@ const CheckoutForm: React.FC = () => {
     const paymentDetails = sessionStorageUtils.getPaymentDetails();
     const kind = paymentDetails?.kind || 'full';
 
-    console.log('[CheckoutForm] useEffect - Loading data:', {
-      paymentDetails: paymentDetails,
-      kind: kind,
-      hasSessionData: !!sessionData,
-      billData: sessionData?.bill ? {
-        subtotal: sessionData.bill.subtotal_cents,
-        tax: sessionData.bill.tax_cents,
-        total: sessionData.bill.total_cents
-      } : null
-    });
-
     // If this is a split or custom payment, use the requested amount
     if (kind === 'equal_split' || kind === 'custom') {
-      console.log('[CheckoutForm] useEffect - Split/Custom payment detected');
       // For split/custom payments, use requested_amount_cents as the base
       if (paymentDetails?.requested_amount_cents !== undefined) {
         const baseAmount = paymentDetails.requested_amount_cents;
         const tipAmount = paymentDetails.tipAmount_cents || 0;
-        
-        console.log('[CheckoutForm] useEffect - Split/Custom amounts:', {
-          baseAmount,
-          tipAmount,
-          total: baseAmount + tipAmount
-        });
         
         // Calculate proportional subtotal and tax for display
         if (sessionData?.bill) {
@@ -78,7 +60,6 @@ const CheckoutForm: React.FC = () => {
         setTotal(baseAmount + tipAmount);
       }
     } else {
-      console.log('[CheckoutForm] useEffect - Full payment detected');
       // For full payments, use the full bill amount from paymentDetails or bill data
       if (paymentDetails) {
         // Use payment details if available (from Payment page)
@@ -86,18 +67,8 @@ const CheckoutForm: React.FC = () => {
         const tipAmount = paymentDetails.tipAmount_cents || 0;
         const totalAmount = paymentDetails.total_cents || 0;
         
-        console.log('[CheckoutForm] useEffect - Full payment from paymentDetails:', {
-          requestedAmount,
-          tipAmount,
-          totalAmount
-        });
-        
         // Get subtotal and tax from bill data or calculate from requested amount
         if (sessionData?.bill) {
-          console.log('[CheckoutForm] useEffect - Using bill data for subtotal/tax:', {
-            subtotal: sessionData.bill.subtotal_cents,
-            tax: sessionData.bill.tax_cents
-          });
           setSubtotal(sessionData.bill.subtotal_cents);
           setTax(sessionData.bill.tax_cents);
         } else if (requestedAmount > 0) {
@@ -109,15 +80,7 @@ const CheckoutForm: React.FC = () => {
         
         setTip(tipAmount);
         setTotal(totalAmount);
-        
-        console.log('[CheckoutForm] useEffect - Final state set:', {
-          subtotal: sessionData?.bill?.subtotal_cents,
-          tax: sessionData?.bill?.tax_cents,
-          tip: tipAmount,
-          total: totalAmount
-        });
       } else {
-        console.log('[CheckoutForm] useEffect - No paymentDetails, using fallback');
         // Fallback to calculated totals or bill data
         const calculatedTotals = sessionStorageUtils.getCalculatedTotals();
         if (calculatedTotals) {

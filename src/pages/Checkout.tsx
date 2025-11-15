@@ -92,22 +92,9 @@ const Checkout: React.FC = () => {
     if (sessionData?.bill) {
       // For full payment, requested_amount_cents is subtotal + tax (base amount before tip)
       const requestedAmount = sessionData.bill.subtotal_cents + sessionData.bill.tax_cents;
-      console.log('[Checkout] handlePayNow - Setting payment details:', {
-        paymentMethod: 'card',
-        tipAmount: 0,
-        total: sessionData.bill.total_cents,
-        kind: 'full',
-        requestedAmount: requestedAmount,
-        billData: {
-          subtotal: sessionData.bill.subtotal_cents,
-          tax: sessionData.bill.tax_cents,
-          total: sessionData.bill.total_cents
-        }
-      });
       sessionStorageUtils.setPaymentDetails('card', 0, sessionData.bill.total_cents, 'full', requestedAmount);
       // Clear any existing splitAmount from sessionStorage for full payment
       sessionStorage.removeItem('splitAmount_cents');
-      console.log('[Checkout] handlePayNow - Cleared splitAmount_cents from sessionStorage');
     }
     navigate('/payment');
   };
