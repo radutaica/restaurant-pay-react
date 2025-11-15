@@ -44,11 +44,18 @@ const CheckoutForm: React.FC = () => {
         const baseAmount = paymentDetails.requested_amount_cents;
         const tipAmount = paymentDetails.tipAmount_cents || 0;
         
-        // Calculate proportional subtotal and tax for display
+        // Calculate subtotal and tax backwards from the total amount using the tax rate
         if (sessionData?.bill) {
-          const splitRatio = baseAmount / sessionData.bill.total_cents;
-          setSubtotal(Math.round(sessionData.bill.subtotal_cents * splitRatio));
-          setTax(Math.round(sessionData.bill.tax_cents * splitRatio));
+          // Tax rate = tax_cents / subtotal_cents
+          const taxRate = sessionData.bill.subtotal_cents > 0 
+            ? sessionData.bill.tax_cents / sessionData.bill.subtotal_cents 
+            : 0.19; // Default to 19% if subtotal is 0
+          // Total = Subtotal + (Subtotal * TaxRate) = Subtotal * (1 + TaxRate)
+          // Subtotal = Total / (1 + TaxRate)
+          const calculatedSubtotal = Math.round(baseAmount / (1 + taxRate));
+          const calculatedTax = baseAmount - calculatedSubtotal;
+          setSubtotal(calculatedSubtotal);
+          setTax(calculatedTax);
         } else {
           // Fallback: assume tax is 19% of subtotal
           const estimatedSubtotal = Math.round(baseAmount / 1.19);

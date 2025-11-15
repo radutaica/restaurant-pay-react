@@ -193,8 +193,6 @@ const Payment: React.FC = () => {
   const [total, setTotal] = useState<number>(13923); // in cents
   const [currency, setCurrency] = useState<string>('ron');
   const [paymentError, setPaymentError] = useState<string>('');
-  const [tipUpdateLoading, setTipUpdateLoading] = useState<boolean>(false);
-  const [tipUpdateError, setTipUpdateError] = useState<string>('');
   const [baseSplitAmount, setBaseSplitAmount] = useState<number | null>(null); // Store base split amount (without tip)
   const [paymentKind, setPaymentKind] = useState<'full' | 'equal_split' | 'custom'>('full');
   const [requestedAmount, setRequestedAmount] = useState<number>(0); // Requested amount before tip
@@ -230,10 +228,17 @@ const Payment: React.FC = () => {
         setBaseSplitAmount(splitAmountCents);
         setTotal(splitAmountCents);
         setRequestedAmount(splitAmountCents);
-        // For split bills, calculate proportional subtotal and tax based on split amount
-        const splitRatio = splitAmountCents / sessionData.bill.total_cents;
-        setSubtotal(Math.round(sessionData.bill.subtotal_cents * splitRatio));
-        setTax(Math.round(sessionData.bill.tax_cents * splitRatio));
+        // Calculate subtotal and tax backwards from the total amount using the tax rate
+        // Tax rate = tax_cents / subtotal_cents
+        const taxRate = sessionData.bill.subtotal_cents > 0 
+          ? sessionData.bill.tax_cents / sessionData.bill.subtotal_cents 
+          : 0.19; // Default to 19% if subtotal is 0
+        // Total = Subtotal + (Subtotal * TaxRate) = Subtotal * (1 + TaxRate)
+        // Subtotal = Total / (1 + TaxRate)
+        const calculatedSubtotal = Math.round(splitAmountCents / (1 + taxRate));
+        const calculatedTax = splitAmountCents - calculatedSubtotal;
+        setSubtotal(calculatedSubtotal);
+        setTax(calculatedTax);
       } else if (sessionData.bill) {
         // Use bill data directly from API response
         setBaseSplitAmount(null); // Not a split bill
@@ -255,13 +260,25 @@ const Payment: React.FC = () => {
   useEffect(() => {
     let tip = 0;
     
+    // For split bills, calculate subtotal first to use for tip calculation
+    let currentSubtotal = subtotal;
+    if (baseSplitAmount !== null) {
+      const sessionData = sessionStorageUtils.getFullSessionData();
+      if (sessionData?.bill) {
+        const taxRate = sessionData.bill.subtotal_cents > 0 
+          ? sessionData.bill.tax_cents / sessionData.bill.subtotal_cents 
+          : 0.19;
+        currentSubtotal = Math.round(baseSplitAmount / (1 + taxRate));
+      }
+    }
+    
     if (tipOption === 'none') {
       tip = 0;
     } else if (tipOption === 'custom' && customTip) {
       tip = Math.round(parseFloat(customTip) * 100);
     } else if (tipOption !== 'custom') {
       const tipPercentage = parseFloat(tipOption) / 100;
-      tip = Math.round(subtotal * tipPercentage);
+      tip = Math.round(currentSubtotal * tipPercentage);
     }
     
     setTipAmount(tip);
@@ -269,131 +286,22 @@ const Payment: React.FC = () => {
     // For split bills, use baseSplitAmount + tip; otherwise use subtotal + tax + tip
     if (baseSplitAmount !== null) {
       setTotal(baseSplitAmount + tip);
+      // For split bills, recalculate subtotal and tax from baseSplitAmount
+      const sessionData = sessionStorageUtils.getFullSessionData();
+      if (sessionData?.bill) {
+        const taxRate = sessionData.bill.subtotal_cents > 0 
+          ? sessionData.bill.tax_cents / sessionData.bill.subtotal_cents 
+          : 0.19;
+        const calculatedSubtotal = Math.round(baseSplitAmount / (1 + taxRate));
+        const calculatedTax = baseSplitAmount - calculatedSubtotal;
+        setSubtotal(calculatedSubtotal);
+        setTax(calculatedTax);
+      }
     } else {
       setTotal(subtotal + tax + tip);
     }
   }, [tipOption, customTip, subtotal, tax, baseSplitAmount]);
 
-  // Track if component has mounted to prevent API call on initial mount
-  const isInitialMount = useRef<boolean>(true);
-  const customTipTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Helper function to update tip via API (memoized with useCallback)
-  const updateTipViaAPI = useCallback(async (tipCents: number) => {
-    setTipUpdateLoading(true);
-    setTipUpdateError('');
-    
-    try {
-      const response = await BillSessionService.updateTip(tipCents);
-      
-      // Update local state with API response
-      if (response.bill) {
-        // Update tip amount from API response
-        setTipAmount(response.bill.tip_cents);
-        
-        // For split bills, use baseSplitAmount + tip; otherwise use API response total
-        if (baseSplitAmount !== null) {
-          setTotal(baseSplitAmount + response.bill.tip_cents);
-        } else {
-          setTotal(response.bill.total_cents);
-        }
-        
-        // Update subtotal and tax in case they changed (though they shouldn't)
-        // For split bills, we keep the proportional values, so only update if not a split bill
-        if (baseSplitAmount === null) {
-          if (response.bill.subtotal_cents !== undefined) {
-            setSubtotal(response.bill.subtotal_cents);
-          }
-          if (response.bill.tax_cents !== undefined) {
-            setTax(response.bill.tax_cents);
-          }
-        }
-        
-        // Update sessionStorage with updated bill data
-        const sessionData = sessionStorageUtils.getFullSessionData();
-        if (sessionData) {
-          const updatedSessionData = {
-            ...sessionData,
-            bill: {
-              ...sessionData.bill,
-              ...response.bill,
-            },
-          };
-          // Update the full session data in sessionStorage
-          if (typeof window !== 'undefined') {
-            sessionStorage.setItem('bill_session_data', JSON.stringify(updatedSessionData));
-          }
-        }
-      }
-    } catch (error: any) {
-      console.error('Failed to update tip:', error);
-      setTipUpdateError(error.message || 'Failed to update tip');
-    } finally {
-      setTipUpdateLoading(false);
-    }
-  }, [baseSplitAmount]); // Include baseSplitAmount in deps
-
-  // Call API to update tip when predefined tip option is selected (excluding custom)
-  useEffect(() => {
-    // Skip on initial mount and custom tip option
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-
-    if (tipOption === 'custom') {
-      return;
-    }
-
-    // Calculate tip amount
-    let tip = 0;
-    if (tipOption === 'none') {
-      tip = 0;
-    } else {
-      const tipPercentage = parseFloat(tipOption) / 100;
-      tip = Math.round(subtotal * tipPercentage);
-    }
-
-    updateTipViaAPI(tip);
-  }, [tipOption, subtotal, updateTipViaAPI]); // Include updateTipViaAPI in deps
-
-  // Handle custom tip with debounce (300ms delay)
-  useEffect(() => {
-    // Clear previous timeout
-    if (customTipTimeoutRef.current) {
-      clearTimeout(customTipTimeoutRef.current);
-    }
-
-    // Skip if not custom option or if custom tip is empty
-    if (tipOption !== 'custom' || !customTip) {
-      return;
-    }
-
-    // Skip on initial mount
-    if (isInitialMount.current) {
-      return;
-    }
-
-    // Parse custom tip value
-    const customTipValue = parseFloat(customTip);
-    if (isNaN(customTipValue) || customTipValue < 0) {
-      return;
-    }
-
-    // Convert to cents and debounce the API call
-    const tipCents = Math.round(customTipValue * 100);
-    
-    customTipTimeoutRef.current = setTimeout(() => {
-      updateTipViaAPI(tipCents);
-    }, 300);
-
-    // Cleanup timeout on unmount or when dependencies change
-    return () => {
-      if (customTipTimeoutRef.current) {
-        clearTimeout(customTipTimeoutRef.current);
-      }
-    };
-  }, [customTip, tipOption, updateTipViaAPI]);
 
   const formatPrice = (cents: number) => {
     return `${(cents / 100).toFixed(2)} ${currency.toUpperCase()}`;
@@ -474,9 +382,7 @@ const Payment: React.FC = () => {
                   onClick={() => {
                     setTipOption('none');
                     setCustomTip('');
-                    setTipUpdateError('');
                   }}
-                  disabled={tipUpdateLoading}
                 />
                 <TipButton
                   label="5%"
@@ -484,9 +390,7 @@ const Payment: React.FC = () => {
                   onClick={() => {
                     setTipOption('5');
                     setCustomTip('');
-                    setTipUpdateError('');
                   }}
-                  disabled={tipUpdateLoading}
                 />
                 <TipButton
                   label="10%"
@@ -494,9 +398,7 @@ const Payment: React.FC = () => {
                   onClick={() => {
                     setTipOption('10');
                     setCustomTip('');
-                    setTipUpdateError('');
                   }}
-                  disabled={tipUpdateLoading}
                 />
                 <TipButton
                   label="15%"
@@ -504,25 +406,9 @@ const Payment: React.FC = () => {
                   onClick={() => {
                     setTipOption('15');
                     setCustomTip('');
-                    setTipUpdateError('');
                   }}
-                  disabled={tipUpdateLoading}
                 />
               </div>
-
-              {/* Tip update loading indicator */}
-              {tipUpdateLoading && (
-                <div className="text-center text-text-light text-sm">
-                  Updating tip...
-                </div>
-              )}
-
-              {/* Tip update error message */}
-              {tipUpdateError && (
-                <div className="text-red-500 text-sm text-center">
-                  {tipUpdateError}
-                </div>
-              )}
 
               {/* Custom Amount Input */}
               <div className="flex items-center gap-2">
@@ -537,23 +423,7 @@ const Payment: React.FC = () => {
                     if (e.target.value) {
                       setTipOption('custom');
                     }
-                    setTipUpdateError(''); // Clear error when user starts typing
                   }}
-                  onBlur={() => {
-                    // If user leaves the input and there's a valid value, update immediately
-                    if (customTip && tipOption === 'custom') {
-                      const customTipValue = parseFloat(customTip);
-                      if (!isNaN(customTipValue) && customTipValue >= 0) {
-                        // Clear any pending timeout and update immediately
-                        if (customTipTimeoutRef.current) {
-                          clearTimeout(customTipTimeoutRef.current);
-                        }
-                        const tipCents = Math.round(customTipValue * 100);
-                        updateTipViaAPI(tipCents);
-                      }
-                    }
-                  }}
-                  disabled={tipUpdateLoading}
                   className="flex-1 px-4 py-3 rounded-lg border border-border-light focus:outline-none focus:border-primary-green text-text-dark disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <span className="text-text-light">{currency.toUpperCase()}</span>
