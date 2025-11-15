@@ -204,25 +204,39 @@ const Payment: React.FC = () => {
     const sessionData = sessionStorageUtils.getFullSessionData();
     const paymentDetails = sessionStorageUtils.getPaymentDetails();
     
+    console.log('[Payment] useEffect - Loading session data:', {
+      hasSessionData: !!sessionData,
+      paymentDetails: paymentDetails,
+      splitAmount: sessionStorage.getItem('splitAmount_cents')
+    });
+    
     if (sessionData) {
       setCurrency(sessionData.venue.currency);
       
       // Load payment kind and requested amount from payment details if available
+      // IMPORTANT: Check kind FIRST to determine if this is a split/custom payment
+      const currentKind = paymentDetails?.kind || 'full';
+      
       if (paymentDetails) {
+        console.log('[Payment] useEffect - Found paymentDetails:', paymentDetails);
         if (paymentDetails.kind) {
           setPaymentKind(paymentDetails.kind);
+          console.log('[Payment] useEffect - Set paymentKind to:', paymentDetails.kind);
         }
         if (paymentDetails.requested_amount_cents !== undefined) {
           setRequestedAmount(paymentDetails.requested_amount_cents);
+          console.log('[Payment] useEffect - Set requestedAmount to:', paymentDetails.requested_amount_cents);
         }
       }
       
-      // Check if this is a split bill payment
+      // Only check for splitAmount if kind is 'equal_split' or 'custom'
+      // If kind is 'full', ignore any splitAmount in sessionStorage
       const splitAmount = sessionStorage.getItem('splitAmount_cents');
       
-      if (splitAmount && sessionData.bill) {
+      if ((currentKind === 'equal_split' || currentKind === 'custom') && splitAmount && sessionData.bill) {
         // Use the split amount as the base amount (without tip)
         const splitAmountCents = parseInt(splitAmount, 10);
+        console.log('[Payment] useEffect - Split/Custom bill detected, splitAmountCents:', splitAmountCents);
         setBaseSplitAmount(splitAmountCents);
         setTotal(splitAmountCents);
         setRequestedAmount(splitAmountCents);
@@ -232,12 +246,27 @@ const Payment: React.FC = () => {
         setTax(Math.round(sessionData.bill.tax_cents * splitRatio));
       } else if (sessionData.bill) {
         // Use bill data directly from API response
+        console.log('[Payment] useEffect - Full bill detected:', {
+          subtotal: sessionData.bill.subtotal_cents,
+          tax: sessionData.bill.tax_cents,
+          total: sessionData.bill.total_cents,
+          hasPaymentDetails: !!paymentDetails,
+          paymentKind: paymentDetails?.kind
+        });
         setBaseSplitAmount(null); // Not a split bill
         setSubtotal(sessionData.bill.subtotal_cents);
         setTax(sessionData.bill.tax_cents);
         setTotal(sessionData.bill.total_cents);
         // For full bills, requested amount is subtotal + tax (without tip)
-        setRequestedAmount(sessionData.bill.subtotal_cents + sessionData.bill.tax_cents);
+        const requestedAmountValue = sessionData.bill.subtotal_cents + sessionData.bill.tax_cents;
+        setRequestedAmount(requestedAmountValue);
+        // If no kind is set from paymentDetails, default to 'full' for full bill payments
+        if (!paymentDetails?.kind) {
+          console.log('[Payment] useEffect - No kind in paymentDetails, setting to "full"');
+          setPaymentKind('full');
+        } else {
+          console.log('[Payment] useEffect - Using kind from paymentDetails:', paymentDetails.kind);
+        }
       }
     }
   }, []);
@@ -395,8 +424,28 @@ const Payment: React.FC = () => {
       // Calculate requested amount (base amount before tip)
       const requestedAmountValue = baseSplitAmount !== null ? baseSplitAmount : (subtotal + tax);
       
+      // Determine the correct kind: if it's not a split payment, ensure it's 'full'
+      const finalKind = baseSplitAmount !== null ? paymentKind : (paymentKind || 'full');
+      
+      console.log('[Payment] handlePay - Storing payment details:', {
+        paymentMethod,
+        tipAmount,
+        total,
+        finalKind,
+        requestedAmountValue,
+        baseSplitAmount,
+        subtotal,
+        tax,
+        currentPaymentKind: paymentKind
+      });
+      
       // Store payment details before navigating with kind and requested amount
-      sessionStorageUtils.setPaymentDetails(paymentMethod, tipAmount, total, paymentKind, requestedAmountValue);
+      sessionStorageUtils.setPaymentDetails(paymentMethod, tipAmount, total, finalKind, requestedAmountValue);
+      
+      // Verify what was stored
+      const storedDetails = sessionStorageUtils.getPaymentDetails();
+      console.log('[Payment] handlePay - Verified stored payment details:', storedDetails);
+      
       // Navigate to checkout form page
       navigate('/checkoutform');
     }
