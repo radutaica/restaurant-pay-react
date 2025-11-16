@@ -76,8 +76,21 @@ const CheckoutForm: React.FC = () => {
         
         // Get subtotal and tax from bill data or calculate from requested amount
         if (sessionData?.bill) {
-          setSubtotal(sessionData.bill.subtotal_cents);
-          setTax(sessionData.bill.tax_cents);
+          // If remaining_cents was used, calculate subtotal and tax from requested amount
+          if (sessionData.bill.remaining_cents !== undefined && sessionData.bill.remaining_cents > 0 && requestedAmount === sessionData.bill.remaining_cents) {
+            // Calculate subtotal and tax from remaining_cents using the tax rate
+            const taxRate = sessionData.bill.subtotal_cents > 0 
+              ? sessionData.bill.tax_cents / sessionData.bill.subtotal_cents 
+              : 0.19;
+            const calculatedSubtotal = Math.round(requestedAmount / (1 + taxRate));
+            const calculatedTax = requestedAmount - calculatedSubtotal;
+            setSubtotal(calculatedSubtotal);
+            setTax(calculatedTax);
+          } else {
+            // Use original bill subtotal and tax
+            setSubtotal(sessionData.bill.subtotal_cents);
+            setTax(sessionData.bill.tax_cents);
+          }
         } else if (requestedAmount > 0) {
           // Fallback: estimate subtotal and tax (assuming 19% tax)
           const estimatedSubtotal = Math.round(requestedAmount / 1.19);
@@ -98,9 +111,22 @@ const CheckoutForm: React.FC = () => {
           setTip(calculatedTip > 0 ? calculatedTip : 0);
           setTotal(calculatedTotals.total_cents);
         } else if (sessionData?.bill) {
-          setSubtotal(sessionData.bill.subtotal_cents);
-          setTax(sessionData.bill.tax_cents);
-          setTotal(sessionData.bill.total_cents);
+          // If remaining_cents exists, use it
+          if (sessionData.bill.remaining_cents !== undefined && sessionData.bill.remaining_cents > 0) {
+            const remainingAmount = sessionData.bill.remaining_cents;
+            const taxRate = sessionData.bill.subtotal_cents > 0 
+              ? sessionData.bill.tax_cents / sessionData.bill.subtotal_cents 
+              : 0.19;
+            const calculatedSubtotal = Math.round(remainingAmount / (1 + taxRate));
+            const calculatedTax = remainingAmount - calculatedSubtotal;
+            setSubtotal(calculatedSubtotal);
+            setTax(calculatedTax);
+            setTotal(remainingAmount);
+          } else {
+            setSubtotal(sessionData.bill.subtotal_cents);
+            setTax(sessionData.bill.tax_cents);
+            setTotal(sessionData.bill.total_cents);
+          }
         }
       }
     }

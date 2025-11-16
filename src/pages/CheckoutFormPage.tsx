@@ -11,9 +11,18 @@ const stripePromise = loadStripe('pk_test_51Q4n7pKc7qc8vhebMAaJl8f41z4a1KSK3ofSe
 const CheckoutFormPage: React.FC = () => {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [error, setError] = useState<string>('');
+  const hasCreatedPaymentIntent = React.useRef<boolean>(false);
 
   useEffect(() => {
+    // Prevent duplicate payment intent creation (React StrictMode causes double renders in dev)
+    if (hasCreatedPaymentIntent.current || clientSecret) {
+      return;
+    }
+
     const fetchPaymentIntent = async () => {
+      // Mark as creating to prevent duplicate calls
+      hasCreatedPaymentIntent.current = true;
+
       try {
         // Get totals from session storage
         const calculatedTotals = sessionStorageUtils.getCalculatedTotals();
@@ -38,9 +47,16 @@ const CheckoutFormPage: React.FC = () => {
             requestedAmount = calculatedTotals.subtotal_cents + calculatedTotals.tax_cents;
             tipAmount = calculatedTotals.total_cents - requestedAmount;
           } else if (sessionData?.bill) {
-            finalTotal = sessionData.bill.total_cents;
-            requestedAmount = sessionData.bill.subtotal_cents + sessionData.bill.tax_cents;
-            tipAmount = sessionData.bill.tip_cents || 0;
+            // If remaining_cents exists and is > 0, use it instead of full total
+            if (sessionData.bill.remaining_cents !== undefined && sessionData.bill.remaining_cents > 0) {
+              requestedAmount = sessionData.bill.remaining_cents;
+              finalTotal = requestedAmount; // Base total without tip
+              tipAmount = 0; // No tip initially
+            } else {
+              finalTotal = sessionData.bill.total_cents;
+              requestedAmount = sessionData.bill.subtotal_cents + sessionData.bill.tax_cents;
+              tipAmount = sessionData.bill.tip_cents || 0;
+            }
           }
         }
 
@@ -54,11 +70,13 @@ const CheckoutFormPage: React.FC = () => {
       } catch (error) {
         console.error('Error fetching payment intent:', error);
         setError('Failed to initiate payment. Please try again.');
+        // Reset flag on error so user can retry
+        hasCreatedPaymentIntent.current = false;
       }
     };
 
     fetchPaymentIntent();
-  }, []);
+  }, [clientSecret]);
 
   if (error) {
     return (

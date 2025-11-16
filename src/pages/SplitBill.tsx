@@ -23,9 +23,15 @@ const SplitBill: React.FC = () => {
       setCurrency(sessionData.venue.currency);
       
       // Use bill data directly from API response
-      if (sessionData.bill && sessionData.bill.total_cents > 0) {
-        setTotal(sessionData.bill.total_cents);
-        setRemaining(sessionData.bill.total_cents);
+      if (sessionData.bill) {
+        // If remaining_cents exists and is > 0, use it instead of total_cents
+        if (sessionData.bill.remaining_cents !== undefined && sessionData.bill.remaining_cents > 0) {
+          setTotal(sessionData.bill.remaining_cents);
+          setRemaining(sessionData.bill.remaining_cents);
+        } else if (sessionData.bill.total_cents > 0) {
+          setTotal(sessionData.bill.total_cents);
+          setRemaining(sessionData.bill.total_cents);
+        }
       }
     }
   }, []);

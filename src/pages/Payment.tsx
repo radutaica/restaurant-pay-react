@@ -242,12 +242,32 @@ const Payment: React.FC = () => {
       } else if (sessionData.bill) {
         // Use bill data directly from API response
         setBaseSplitAmount(null); // Not a split bill
-        setSubtotal(sessionData.bill.subtotal_cents);
-        setTax(sessionData.bill.tax_cents);
-        setTotal(sessionData.bill.total_cents);
-        // For full bills, requested amount is subtotal + tax (without tip)
-        const requestedAmountValue = sessionData.bill.subtotal_cents + sessionData.bill.tax_cents;
-        setRequestedAmount(requestedAmountValue);
+        
+        // If remaining_cents exists and is > 0, use it as the base amount instead of subtotal + tax
+        if (sessionData.bill.remaining_cents !== undefined && sessionData.bill.remaining_cents > 0) {
+          // Use remaining_cents as the base amount to pay
+          const remainingAmount = sessionData.bill.remaining_cents;
+          setTotal(remainingAmount);
+          setRequestedAmount(remainingAmount);
+          
+          // Calculate subtotal and tax from remaining_cents using the tax rate
+          const taxRate = sessionData.bill.subtotal_cents > 0 
+            ? sessionData.bill.tax_cents / sessionData.bill.subtotal_cents 
+            : 0.19; // Default to 19% if subtotal is 0
+          const calculatedSubtotal = Math.round(remainingAmount / (1 + taxRate));
+          const calculatedTax = remainingAmount - calculatedSubtotal;
+          setSubtotal(calculatedSubtotal);
+          setTax(calculatedTax);
+        } else {
+          // No remaining amount, use full bill totals
+          setSubtotal(sessionData.bill.subtotal_cents);
+          setTax(sessionData.bill.tax_cents);
+          setTotal(sessionData.bill.total_cents);
+          // For full bills, requested amount is subtotal + tax (without tip)
+          const requestedAmountValue = sessionData.bill.subtotal_cents + sessionData.bill.tax_cents;
+          setRequestedAmount(requestedAmountValue);
+        }
+        
         // If no kind is set from paymentDetails, default to 'full' for full bill payments
         if (!paymentDetails?.kind) {
           setPaymentKind('full');
@@ -270,6 +290,9 @@ const Payment: React.FC = () => {
           : 0.19;
         currentSubtotal = Math.round(baseSplitAmount / (1 + taxRate));
       }
+    } else {
+      // For full payments, use the calculated subtotal (which may be from remaining_cents)
+      currentSubtotal = subtotal;
     }
     
     if (tipOption === 'none') {
@@ -283,7 +306,7 @@ const Payment: React.FC = () => {
     
     setTipAmount(tip);
     
-    // For split bills, use baseSplitAmount + tip; otherwise use subtotal + tax + tip
+    // For split bills, use baseSplitAmount + tip; otherwise use requestedAmount + tip
     if (baseSplitAmount !== null) {
       setTotal(baseSplitAmount + tip);
       // For split bills, recalculate subtotal and tax from baseSplitAmount
@@ -298,9 +321,10 @@ const Payment: React.FC = () => {
         setTax(calculatedTax);
       }
     } else {
-      setTotal(subtotal + tax + tip);
+      // For full payments, use requestedAmount (which may be remaining_cents) + tip
+      setTotal(requestedAmount + tip);
     }
-  }, [tipOption, customTip, subtotal, tax, baseSplitAmount]);
+  }, [tipOption, customTip, subtotal, tax, baseSplitAmount, requestedAmount]);
 
 
   const formatPrice = (cents: number) => {
@@ -310,7 +334,8 @@ const Payment: React.FC = () => {
   const handlePay = () => {
     if (paymentMethod === 'card') {
       // Calculate requested amount (base amount before tip)
-      const requestedAmountValue = baseSplitAmount !== null ? baseSplitAmount : (subtotal + tax);
+      // For split bills, use baseSplitAmount; for full bills, use requestedAmount (which may be remaining_cents)
+      const requestedAmountValue = baseSplitAmount !== null ? baseSplitAmount : requestedAmount;
       
       // Determine the correct kind: if it's not a split payment, ensure it's 'full'
       const finalKind = baseSplitAmount !== null ? paymentKind : (paymentKind || 'full');

@@ -17,6 +17,8 @@ const Checkout: React.FC = () => {
   const [subtotal, setSubtotal] = useState<number>(0);
   const [tax, setTax] = useState<number>(0);
   const [total, setTotal] = useState<number>(0);
+  const [paidCents, setPaidCents] = useState<number | undefined>(undefined);
+  const [remainingCents, setRemainingCents] = useState<number | undefined>(undefined);
   const [currency, setCurrency] = useState<string>('ron');
   const [isLoadingItems, setIsLoadingItems] = useState<boolean>(false);
   const [itemsError, setItemsError] = useState<string | null>(null);
@@ -32,9 +34,12 @@ const Checkout: React.FC = () => {
 
       // Use bill data directly from API response
       if (sessionData.bill) {
+        console.log(sessionData.bill);
         setSubtotal(sessionData.bill.subtotal_cents);
         setTax(sessionData.bill.tax_cents);
         setTotal(sessionData.bill.total_cents);
+        setPaidCents(sessionData.bill.paid_cents);
+        setRemainingCents(sessionData.bill.remaining_cents);
       }
 
       // Fetch bill items from API
@@ -140,6 +145,8 @@ const Checkout: React.FC = () => {
                   subtotal_cents={subtotal}
                   tax_cents={tax}
                   total_cents={total}
+                  paid_cents={paidCents}
+                  remaining_cents={remainingCents}
                   currency={currency}
                 />
               </>
