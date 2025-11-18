@@ -34,7 +34,6 @@ const Checkout: React.FC = () => {
 
       // Use bill data directly from API response
       if (sessionData.bill) {
-        console.log(sessionData.bill);
         setSubtotal(sessionData.bill.subtotal_cents);
         setTax(sessionData.bill.tax_cents);
         setTotal(sessionData.bill.total_cents);
