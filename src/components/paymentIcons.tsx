@@ -1,4 +1,5 @@
 import React from 'react';
+import { CreditCard } from 'lucide-react';
 
 export const ApplePayIcon: React.FC = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -29,19 +30,6 @@ export const GooglePayIcon: React.FC = () => (
 );
 
 export const CreditCardIcon: React.FC = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <rect
-      x="3"
-      y="6"
-      width="18"
-      height="12"
-      rx="2"
-      stroke="currentColor"
-      strokeWidth="2"
-    />
-    <path d="M3 10H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    <circle cx="7" cy="14" r="1" fill="currentColor" />
-    <path d="M11 14H17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-  </svg>
+  <CreditCard size={24} />
 );
 

@@ -155,15 +155,15 @@ const PaymentConfirmation: React.FC = () => {
 
           {/* Action Buttons */}
           <div className="space-y-3 mb-6">
-            <PrimaryButton onClick={handleShowToWaiter}>
+            {/* <PrimaryButton onClick={handleShowToWaiter}>
               Show to waiter
-            </PrimaryButton>
-            <SecondaryButton onClick={handleEmailReceipt}>
+            </PrimaryButton> */}
+            <PrimaryButton onClick={handleEmailReceipt}>
               <div className="flex items-center justify-center gap-2">
-                <EnvelopeIcon className="text-text-dark" />
+                <EnvelopeIcon className="text-text-white" />
                 <span>Email receipt</span>
               </div>
-            </SecondaryButton>
+            </PrimaryButton>
           </div>
 
           {/* Back to bill link */}

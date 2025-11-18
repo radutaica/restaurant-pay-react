@@ -484,21 +484,6 @@ const Payment: React.FC = () => {
 
           {/* Security Disclaimer */}
           <div className="flex items-center justify-center gap-2 text-text-light text-sm mb-6">
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M6 10V8C6 5.79086 7.79086 4 10 4H14C16.2091 4 18 5.79086 18 8V10M6 10H18M6 10V18C6 19.1046 6.89543 20 8 20H16C17.1046 20 18 19.1046 18 18V10M18 10H6"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
             <span>Payments are processed securely by Stripe.</span>
           </div>
           </div>
