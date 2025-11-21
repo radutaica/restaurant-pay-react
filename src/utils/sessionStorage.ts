@@ -303,5 +303,23 @@ export const sessionStorageUtils = {
     sessionStorage.removeItem(PAYMENT_REQUESTED_AMOUNT_KEY);
     sessionStorage.removeItem(PAYMENT_CONTRIBUTION_ID_KEY);
   },
+
+  /**
+   * Get the stored user email from localStorage (global across all venues)
+   * @returns The stored email or null if not found
+   */
+  getStoredEmail(): string | null {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('rp_user_email');
+  },
+
+  /**
+   * Store the user email in localStorage (global across all venues)
+   * @param email - The email address to store
+   */
+  setStoredEmail(email: string): void {
+    if (typeof window === 'undefined' || !email) return;
+    localStorage.setItem('rp_user_email', email.trim());
+  },
 };
 

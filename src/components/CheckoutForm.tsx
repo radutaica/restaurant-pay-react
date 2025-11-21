@@ -32,6 +32,12 @@ const CheckoutForm: React.FC = () => {
     if (sessionData) {
       setCurrency(sessionData.venue.currency);
     }
+    
+    // Load stored email from localStorage (global across all venues)
+    const storedEmail = sessionStorageUtils.getStoredEmail();
+    if (storedEmail) {
+      setEmailInput(storedEmail);
+    }
 
     // Get payment details to determine if this is a split/custom payment
     const paymentDetails = sessionStorageUtils.getPaymentDetails();
@@ -152,6 +158,11 @@ const CheckoutForm: React.FC = () => {
     setIsProcessing(true);
     setErrorMessage('');
 
+    // Save email to localStorage before making payment (so it's saved even if payment fails)
+    if (trimmedEmail) {
+      sessionStorageUtils.setStoredEmail(trimmedEmail);
+    }
+
     const { error } = await stripe.confirmPayment({
       elements,
       confirmParams: {
@@ -174,7 +185,7 @@ const CheckoutForm: React.FC = () => {
       setErrorMessage(error.message || 'An error occurred during payment');
       setIsProcessing(false);
     } else {
-      // Payment successful - navigate to confirmation
+      // Navigate to confirmation
       const existingDetails = sessionStorageUtils.getPaymentDetails();
       const contributionId =
         sessionStorageUtils.getContributionId() || existingDetails?.contribution_id;
