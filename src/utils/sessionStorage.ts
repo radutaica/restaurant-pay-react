@@ -18,6 +18,7 @@ const PAYMENT_TOTAL_KEY = 'payment_total_cents';
 const PAYMENT_TIME_KEY = 'payment_time';
 const PAYMENT_KIND_KEY = 'payment_kind';
 const PAYMENT_REQUESTED_AMOUNT_KEY = 'payment_requested_amount_cents';
+const PAYMENT_CONTRIBUTION_ID_KEY = 'payment_contribution_id';
 
 export const sessionStorageUtils = {
   /**
@@ -201,13 +202,15 @@ export const sessionStorageUtils = {
    * @param total_cents - Total amount paid in cents
    * @param kind - Payment kind ('full', 'equal_split', or 'custom')
    * @param requested_amount_cents - Requested amount in cents (base amount before tip)
+   * @param contribution_id - Contribution ID returned by server
    */
   setPaymentDetails(
     paymentMethod: string, 
     tipAmount_cents: number, 
     total_cents: number, 
     kind?: 'full' | 'equal_split' | 'custom',
-    requested_amount_cents?: number
+    requested_amount_cents?: number,
+    contribution_id?: string
   ): void {
     if (typeof window === 'undefined') return;
     sessionStorage.setItem(PAYMENT_METHOD_KEY, paymentMethod);
@@ -219,6 +222,9 @@ export const sessionStorageUtils = {
     }
     if (requested_amount_cents !== undefined) {
       sessionStorage.setItem(PAYMENT_REQUESTED_AMOUNT_KEY, requested_amount_cents.toString());
+    }
+    if (contribution_id) {
+      sessionStorage.setItem(PAYMENT_CONTRIBUTION_ID_KEY, contribution_id);
     }
   },
 
@@ -233,6 +239,7 @@ export const sessionStorageUtils = {
     paymentTime: string;
     kind?: 'full' | 'equal_split' | 'custom';
     requested_amount_cents?: number;
+    contribution_id?: string;
   } | null {
     if (typeof window === 'undefined') return null;
     const paymentMethod = sessionStorage.getItem(PAYMENT_METHOD_KEY);
@@ -241,6 +248,7 @@ export const sessionStorageUtils = {
     const paymentTime = sessionStorage.getItem(PAYMENT_TIME_KEY);
     const kind = sessionStorage.getItem(PAYMENT_KIND_KEY) as 'full' | 'equal_split' | 'custom' | null;
     const requestedAmount = sessionStorage.getItem(PAYMENT_REQUESTED_AMOUNT_KEY);
+    const contributionId = sessionStorage.getItem(PAYMENT_CONTRIBUTION_ID_KEY);
     
     if (paymentMethod && tipAmount && total && paymentTime) {
       return {
@@ -250,9 +258,26 @@ export const sessionStorageUtils = {
         paymentTime,
         kind: kind || undefined,
         requested_amount_cents: requestedAmount ? parseInt(requestedAmount, 10) : undefined,
+        contribution_id: contributionId || undefined,
       };
     }
     return null;
+  },
+
+  /**
+   * Store the latest contribution ID associated with the current payment intent
+   */
+  setContributionId(contributionId: string): void {
+    if (typeof window === 'undefined') return;
+    sessionStorage.setItem(PAYMENT_CONTRIBUTION_ID_KEY, contributionId);
+  },
+
+  /**
+   * Retrieve the stored contribution ID
+   */
+  getContributionId(): string | null {
+    if (typeof window === 'undefined') return null;
+    return sessionStorage.getItem(PAYMENT_CONTRIBUTION_ID_KEY);
   },
 
   /**
@@ -276,6 +301,7 @@ export const sessionStorageUtils = {
     sessionStorage.removeItem(PAYMENT_TIME_KEY);
     sessionStorage.removeItem(PAYMENT_KIND_KEY);
     sessionStorage.removeItem(PAYMENT_REQUESTED_AMOUNT_KEY);
+    sessionStorage.removeItem(PAYMENT_CONTRIBUTION_ID_KEY);
   },
 };
 

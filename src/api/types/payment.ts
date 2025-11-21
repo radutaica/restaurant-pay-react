@@ -13,6 +13,7 @@ export interface CreatePaymentIntentResponse {
   amount: number;
   currency: string;
   status: string;
+  contribution_id: string;
 }
 
 export interface PaymentError {

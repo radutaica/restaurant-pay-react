@@ -15,10 +15,10 @@ const CheckoutForm: React.FC = () => {
 
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [emailInput, setEmailInput] = useState<string>('');
-  const [billingAddress, setBillingAddress] = useState<string>('');
-  const [city, setCity] = useState<string>('');
-  const [postalCode, setPostalCode] = useState<string>('');
-  const [country, setCountry] = useState<string>('');
+  // const [billingAddress, setBillingAddress] = useState<string>('');
+  // const [city, setCity] = useState<string>('');
+  // const [postalCode, setPostalCode] = useState<string>('');
+  // const [country, setCountry] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [subtotal, setSubtotal] = useState<number>(0);
   const [tax, setTax] = useState<number>(0);
@@ -132,9 +132,22 @@ const CheckoutForm: React.FC = () => {
     }
   }, []);
 
+  const trimmedEmail = emailInput.trim();
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const isEmailMissing = trimmedEmail === '';
+  const isEmailInvalid = !isEmailMissing && !emailRegex.test(trimmedEmail);
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!stripe || !elements) return;
+    if (isEmailMissing) {
+      setErrorMessage('Please enter your email before paying.');
+      return;
+    }
+    if (isEmailInvalid) {
+      setErrorMessage('Please enter a valid email address.');
+      return;
+    }
 
     setIsProcessing(true);
     setErrorMessage('');
@@ -146,12 +159,12 @@ const CheckoutForm: React.FC = () => {
         payment_method_data: {
           billing_details: {
             email: emailInput,
-            address: {
-              line1: billingAddress,
-              city: city,
-              postal_code: postalCode,
-              country: country,
-            },
+            // address: {
+            //   line1: billingAddress,
+            //   city: city,
+            //   postal_code: postalCode,
+            //   country: country,
+            // },
           },
         },
       },
@@ -162,7 +175,17 @@ const CheckoutForm: React.FC = () => {
       setIsProcessing(false);
     } else {
       // Payment successful - navigate to confirmation
-      sessionStorageUtils.setPaymentDetails('card', tip, total);
+      const existingDetails = sessionStorageUtils.getPaymentDetails();
+      const contributionId =
+        sessionStorageUtils.getContributionId() || existingDetails?.contribution_id;
+      sessionStorageUtils.setPaymentDetails(
+        'card',
+        tip,
+        total,
+        existingDetails?.kind,
+        existingDetails?.requested_amount_cents,
+        contributionId
+      );
       navigate('/payment-confirmation');
     }
   };
@@ -263,7 +286,7 @@ const CheckoutForm: React.FC = () => {
                   placeholder="john.doe@example.com"
                 />
               </div>
-              <div>
+              {/* <div>
                 <label htmlFor="billing-address" className="block text-sm font-medium text-text-dark mb-2">
                   Billing Address
                 </label>
@@ -320,7 +343,7 @@ const CheckoutForm: React.FC = () => {
                   className="w-full px-4 py-3 rounded-lg bg-background-light border-0 text-text-dark placeholder-text-lighter focus:outline-none focus:ring-2 focus:ring-primary-green"
                   placeholder="United States"
                 />
-              </div>
+              </div> */}
             </div>
           </div>
 
@@ -332,44 +355,27 @@ const CheckoutForm: React.FC = () => {
           {/* Pay Button */}
           <button
             type="submit"
-            disabled={!stripe || !elements || isProcessing}
+            disabled={
+              !stripe || !elements || isProcessing || isEmailMissing || isEmailInvalid
+            }
             className="w-full bg-primary-green hover:bg-primary-greenDark disabled:bg-text-lighter disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg flex items-center justify-center gap-2 mb-4"
           >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M6 10V8C6 5.79086 7.79086 4 10 4H14C16.2091 4 18 5.79086 18 8V10M6 10H18M6 10V18C6 19.1046 6.89543 20 8 20H16C17.1046 20 18 19.1046 18 18V10M18 10H6"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
             {isProcessing ? 'Processing...' : `Pay ${formatPrice(total)}`}
           </button>
 
+          {isEmailMissing && (
+            <div className="mb-4 text-center text-sm text-text-light">
+              Enter your email above to enable payment.
+            </div>
+          )}
+          {!isEmailMissing && isEmailInvalid && (
+            <div className="mb-4 text-center text-sm text-red-500">
+              Please provide a valid email address.
+            </div>
+          )}
+
           {/* Security Message */}
           <div className="flex items-center justify-center gap-2 text-text-light text-sm">
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M6 10V8C6 5.79086 7.79086 4 10 4H14C16.2091 4 18 5.79086 18 8V10M6 10H18M6 10V18C6 19.1046 6.89543 20 8 20H16C17.1046 20 18 19.1046 18 18V10M18 10H6"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
             <span>Secured by Stripe • Your payment information is encrypted</span>
           </div>
         </form>

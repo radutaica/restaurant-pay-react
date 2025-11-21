@@ -107,6 +107,9 @@ const WalletPaymentButton: React.FC<{
           tip_cents: tipAmount,
           kind
         });
+        if (response.contribution_id) {
+          sessionStorageUtils.setContributionId(response.contribution_id);
+        }
         
         // Confirm payment with Stripe
         const { error: confirmError } = await stripe.confirmCardPayment(
@@ -122,7 +125,14 @@ const WalletPaymentButton: React.FC<{
           onError(confirmError.message || 'Payment failed');
         } else {
           // Store payment details with tip, kind, and requested amount
-          sessionStorageUtils.setPaymentDetails('wallet', tipAmount, amount, kind, requestedAmount);
+          sessionStorageUtils.setPaymentDetails(
+            'wallet',
+            tipAmount,
+            amount,
+            kind,
+            requestedAmount,
+            response.contribution_id
+          );
           ev.complete('success');
           onSuccess();
         }

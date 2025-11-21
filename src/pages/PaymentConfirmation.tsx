@@ -12,6 +12,7 @@ const PaymentConfirmation: React.FC = () => {
     tipAmount_cents: number;
     total_cents: number;
     paymentTime: string;
+    contribution_id?: string;
   } | null>(null);
   const [restaurantName, setRestaurantName] = useState<string>('Restaurant');
   const [tableName, setTableName] = useState<string>('Table');

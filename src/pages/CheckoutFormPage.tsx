@@ -66,6 +66,9 @@ const CheckoutFormPage: React.FC = () => {
           tip_cents: tipAmount,
           kind
         });
+        if (response.contribution_id) {
+          sessionStorageUtils.setContributionId(response.contribution_id);
+        }
         setClientSecret(response.client_secret);
       } catch (error) {
         console.error('Error fetching payment intent:', error);
