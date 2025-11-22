@@ -4,6 +4,7 @@ import PrimaryButton from '../components/PrimaryButton';
 import SecondaryButton from '../components/SecondaryButton';
 import { EnvelopeIcon } from '../components/icons';
 import { sessionStorageUtils } from '../utils/sessionStorage';
+import { PaymentService } from '../api';
 
 const PaymentConfirmation: React.FC = () => {
   const navigate = useNavigate();
@@ -17,6 +18,9 @@ const PaymentConfirmation: React.FC = () => {
   const [restaurantName, setRestaurantName] = useState<string>('Restaurant');
   const [tableName, setTableName] = useState<string>('Table');
   const [currency, setCurrency] = useState<string>('ron');
+  const [isSendingReceipt, setIsSendingReceipt] = useState<boolean>(false);
+  const [receiptError, setReceiptError] = useState<string>('');
+  const [receiptSuccess, setReceiptSuccess] = useState<boolean>(false);
 
   useEffect(() => {
     // Load payment details
@@ -61,9 +65,36 @@ const PaymentConfirmation: React.FC = () => {
     console.log('Show to waiter');
   };
 
-  const handleEmailReceipt = () => {
-    // TODO: Implement email receipt functionality
-    console.log('Email receipt');
+  const handleEmailReceipt = async () => {
+    if (!paymentDetails?.contribution_id) {
+      setReceiptError('Contribution ID not found');
+      return;
+    }
+
+    // Get email from localStorage (stored email)
+    const storedEmail = sessionStorageUtils.getStoredEmail();
+    if (!storedEmail) {
+      setReceiptError('Please provide your email address');
+      return;
+    }
+
+    setIsSendingReceipt(true);
+    setReceiptError('');
+    setReceiptSuccess(false);
+
+    try {
+      await PaymentService.sendReceipt({
+        contribution_id: paymentDetails.contribution_id,
+        email: storedEmail,
+      });
+      setReceiptSuccess(true);
+      setReceiptError('');
+    } catch (error: any) {
+      setReceiptError(error.message || 'Failed to send receipt. Please try again.');
+      setReceiptSuccess(false);
+    } finally {
+      setIsSendingReceipt(false);
+    }
   };
 
   const handleBackToBill = () => {
@@ -159,12 +190,27 @@ const PaymentConfirmation: React.FC = () => {
             {/* <PrimaryButton onClick={handleShowToWaiter}>
               Show to waiter
             </PrimaryButton> */}
-            <PrimaryButton onClick={handleEmailReceipt}>
+            <PrimaryButton 
+              onClick={handleEmailReceipt}
+              disabled={isSendingReceipt || !paymentDetails?.contribution_id}
+            >
               <div className="flex items-center justify-center gap-2">
                 <EnvelopeIcon className="text-text-white" />
-                <span>Email receipt</span>
+                <span>{isSendingReceipt ? 'Sending...' : 'Email receipt'}</span>
               </div>
             </PrimaryButton>
+            
+            {/* Receipt Status Messages */}
+            {receiptSuccess && (
+              <div className="text-center text-sm text-primary-green">
+                Receipt email has been sent successfully!
+              </div>
+            )}
+            {receiptError && (
+              <div className="text-center text-sm text-red-500">
+                {receiptError}
+              </div>
+            )}
           </div>
 
           {/* Back to bill link */}

@@ -321,5 +321,13 @@ export const sessionStorageUtils = {
     if (typeof window === 'undefined' || !email) return;
     localStorage.setItem('rp_user_email', email.trim());
   },
+
+  /**
+   * Remove the stored user email from localStorage
+   */
+  removeStoredEmail(): void {
+    if (typeof window === 'undefined') return;
+    localStorage.removeItem('rp_user_email');
+  },
 };
 

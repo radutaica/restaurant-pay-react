@@ -15,6 +15,7 @@ export const API_CONFIG = {
 export const API_ENDPOINTS = {
   PAYMENT: {
     CREATE_INTENT: '/users/payment/create_payment',
+    SEND_RECEIPT: '/users/payment/send_receipt',
   },
   BILL_SESSION: {
     CREATE_SESSION: (slug: string) => `/t/${slug}`,
