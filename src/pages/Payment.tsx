@@ -197,7 +197,7 @@ const Payment: React.FC = () => {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
   const [tipOption, setTipOption] = useState<TipOption>('none');
   const [customTip, setCustomTip] = useState<string>('');
-  const [subtotal, setSubtotal] = useState<number>(); // in cents
+  const [subtotal, setSubtotal] = useState<number>(0); // in cents
   const [tax, setTax] = useState<number>(2223); // in cents
   const [tipAmount, setTipAmount] = useState<number>(0);
   const [total, setTotal] = useState<number>(13923); // in cents
