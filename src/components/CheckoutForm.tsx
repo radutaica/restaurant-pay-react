@@ -15,6 +15,7 @@ const CheckoutForm: React.FC = () => {
 
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [emailInput, setEmailInput] = useState<string>('');
+  const [rememberEmail, setRememberEmail] = useState<boolean>(false);
   // const [billingAddress, setBillingAddress] = useState<string>('');
   // const [city, setCity] = useState<string>('');
   // const [postalCode, setPostalCode] = useState<string>('');
@@ -37,6 +38,7 @@ const CheckoutForm: React.FC = () => {
     const storedEmail = sessionStorageUtils.getStoredEmail();
     if (storedEmail) {
       setEmailInput(storedEmail);
+      setRememberEmail(true); // Auto-check if email exists in localStorage
     }
 
     // Get payment details to determine if this is a split/custom payment
@@ -158,9 +160,11 @@ const CheckoutForm: React.FC = () => {
     setIsProcessing(true);
     setErrorMessage('');
 
-    // Save email to localStorage before making payment (so it's saved even if payment fails)
-    if (trimmedEmail) {
+    // Save or remove email from localStorage based on checkbox
+    if (rememberEmail && trimmedEmail) {
       sessionStorageUtils.setStoredEmail(trimmedEmail);
+    } else {
+      sessionStorageUtils.removeStoredEmail();
     }
 
     const { error } = await stripe.confirmPayment({
@@ -296,6 +300,24 @@ const CheckoutForm: React.FC = () => {
                   className="w-full px-4 py-3 rounded-lg bg-background-light border-0 text-text-dark placeholder-text-lighter focus:outline-none focus:ring-2 focus:ring-primary-green"
                   placeholder="john.doe@example.com"
                 />
+              </div>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="remember-email"
+                  checked={rememberEmail}
+                  onChange={(e) => {
+                    setRememberEmail(e.target.checked);
+                    // If unchecking, remove email from localStorage immediately
+                    if (!e.target.checked) {
+                      sessionStorageUtils.removeStoredEmail();
+                    }
+                  }}
+                  className="w-4 h-4 accent-primary-green bg-background-light border-0 rounded focus:outline-none focus:ring-0 cursor-pointer"
+                />
+                <label htmlFor="remember-email" className="ml-2 text-sm text-text-dark cursor-pointer">
+                  Remember my email
+                </label>
               </div>
               {/* <div>
                 <label htmlFor="billing-address" className="block text-sm font-medium text-text-dark mb-2">

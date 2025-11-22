@@ -29,3 +29,16 @@ export interface PaymentIntent {
   status: string;
   client_secret: string;
 }
+
+export interface SendReceiptRequest {
+  contribution_id: string;
+  email: string;
+}
+
+export interface SendReceiptResponse {
+  message: string;
+}
+
+export interface SendReceiptError {
+  error: string;
+}
