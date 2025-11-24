@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import { createConsumer, Subscription } from '@rails/actioncable';
 import { API_CONFIG } from '../api/config';
 import { sessionStorageUtils } from '../utils/sessionStorage';
+import { Bill } from '../api/types/billSession';
 
 export interface PaymentUpdateData {
   type: 'payment_completed' | 'heartbeat' | 'error' | 'connected';
@@ -115,6 +116,11 @@ export const usePaymentUpdatesActionCable = (options: UsePaymentUpdatesOptions =
                 } : null,
               });
               
+              // Update bill data in sessionStorage if bill information is provided
+              if (data.bill) {
+                sessionStorageUtils.updateBillData(data.bill as Partial<Bill>);
+              }
+              
               if (onPaymentCompleted) {
                 onPaymentCompleted(data);
               }
@@ -132,8 +138,13 @@ export const usePaymentUpdatesActionCable = (options: UsePaymentUpdatesOptions =
                 onError(new Event('error'));
               }
             } else {
-              // Unknown message type
-              console.log('[ActionCable] Unknown message type:', data.type, 'Full data:', data);
+              // Unknown message type - but check if it contains bill data to update
+              if (data.bill) {
+                console.log('[ActionCable] Unknown message type with bill data, updating sessionStorage:', data.type);
+                sessionStorageUtils.updateBillData(data.bill as Partial<Bill>);
+              } else {
+                console.log('[ActionCable] Unknown message type:', data.type, 'Full data:', data);
+              }
             }
           },
 

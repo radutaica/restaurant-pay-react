@@ -163,6 +163,48 @@ export const sessionStorageUtils = {
   },
 
   /**
+   * Update bill data in sessionStorage when receiving updates from ActionCable/SSE
+   * Merges new bill data with existing session data
+   * @param billData - Updated bill data to merge
+   */
+  updateBillData(billData: Partial<BillSessionResponse['bill']>): void {
+    if (typeof window === 'undefined') return;
+    
+    const existingSessionData = this.getFullSessionData();
+    if (!existingSessionData || !existingSessionData.bill) {
+      console.warn('Cannot update bill data: no existing session data found');
+      return;
+    }
+
+    // Merge new bill data with existing bill data
+    const updatedBill = {
+      ...existingSessionData.bill,
+      ...billData,
+    };
+
+    // Update the full session data with merged bill
+    const updatedSessionData: BillSessionResponse = {
+      ...existingSessionData,
+      bill: updatedBill,
+    };
+
+    // Save updated session data back to sessionStorage
+    sessionStorage.setItem(FULL_SESSION_DATA_KEY, JSON.stringify(updatedSessionData));
+
+    // Also update individual bill fields if they exist
+    if (billData.id !== undefined) {
+      sessionStorage.setItem(BILL_ID_KEY, billData.id.toString());
+    }
+
+    console.log('[SessionStorage] Bill data updated:', {
+      billId: updatedBill.id,
+      paid_cents: updatedBill.paid_cents,
+      remaining_cents: updatedBill.remaining_cents,
+      total_cents: updatedBill.total_cents,
+    });
+  },
+
+  /**
    * Store calculated bill totals from Checkout page
    * @param subtotal_cents - Subtotal in cents
    * @param tax_cents - Tax in cents
