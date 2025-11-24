@@ -10,6 +10,7 @@ import PrimaryButton from '../components/PrimaryButton';
 import { CreditCardIcon } from '../components/paymentIcons';
 import { sessionStorageUtils } from '../utils/sessionStorage';
 import { PaymentService, BillSessionService } from '../api';
+import { usePaymentUpdatesActionCable, PaymentUpdateData } from '../hooks/usePaymentUpdatesActionCable';
 
 // Load Stripe
 const stripePromise = loadStripe('pk_test_51Q4n7pKc7qc8vhebMAaJl8f41z4a1KSK3ofSeno1K2D62AH5DyWfzWSwkQgt0cbSg2GKG3G2tEeHns2Kg2OQVtJN00pfcNCBwe');
@@ -206,11 +207,48 @@ const Payment: React.FC = () => {
   const [baseSplitAmount, setBaseSplitAmount] = useState<number | null>(null); // Store base split amount (without tip)
   const [paymentKind, setPaymentKind] = useState<'full' | 'equal_split' | 'custom'>('full');
   const [requestedAmount, setRequestedAmount] = useState<number>(0); // Requested amount before tip
+  const [hasSessionToken, setHasSessionToken] = useState<boolean>(false);
+
+  // Subscribe to payment updates via ActionCable after session token is available
+  const handlePaymentUpdate = useCallback((data: PaymentUpdateData) => {
+    if (data.type === 'payment_completed') {
+      console.log('[Payment] Payment completed:', data.contribution);
+      console.log('[Payment] Bill status:', data.bill);
+      
+      // Update UI or navigate based on payment completion
+      // You can add additional logic here, such as:
+      // - Updating the bill totals if remaining_cents changed
+      // - Showing a notification
+      // - Refreshing bill data
+      
+      // If the bill is fully paid, you might want to navigate to confirmation
+      if (data.bill?.remaining_cents === 0) {
+        // Optionally navigate to confirmation page
+        // navigate('/payment-confirmation');
+      }
+    }
+  }, []);
+
+  const handleActionCableError = useCallback((error: Event) => {
+    console.error('[Payment] ActionCable connection error:', error);
+    // You can add user-facing error handling here if needed
+  }, []);
+
+  // Subscribe to ActionCable updates - only when session token is available
+  usePaymentUpdatesActionCable({
+    onPaymentCompleted: handlePaymentUpdate,
+    onError: handleActionCableError,
+    enabled: hasSessionToken,
+  });
 
   // Load session data and use bill totals from API
   useEffect(() => {
     const sessionData = sessionStorageUtils.getFullSessionData();
     const paymentDetails = sessionStorageUtils.getPaymentDetails();
+    
+    // Check if session token is available for SSE subscription
+    const sessionToken = sessionStorageUtils.getSessionToken();
+    setHasSessionToken(!!sessionToken);
     
     if (sessionData) {
       setCurrency(sessionData.venue.currency);

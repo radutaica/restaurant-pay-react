@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import { useNavigate } from 'react-router-dom';
 import CheckoutHeader from '../components/CheckoutHeader';
 import BillItem, { BillItemData } from '../components/BillItem';
@@ -8,6 +8,7 @@ import SecondaryButton from '../components/SecondaryButton';
 import FooterDisclaimer from '../components/FooterDisclaimer';
 import { sessionStorageUtils } from '../utils/sessionStorage';
 import { ItemTableRelationsService } from '../api';
+import { usePaymentUpdatesActionCable, PaymentUpdateData } from '../hooks/usePaymentUpdatesActionCable';
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
@@ -22,9 +23,44 @@ const Checkout: React.FC = () => {
   const [currency, setCurrency] = useState<string>('ron');
   const [isLoadingItems, setIsLoadingItems] = useState<boolean>(false);
   const [itemsError, setItemsError] = useState<string | null>(null);
+  const [hasSessionToken, setHasSessionToken] = useState<boolean>(false);
+
+  // Handle payment updates from ActionCable
+  const handlePaymentUpdate = useCallback((data: PaymentUpdateData) => {
+    if (data.type === 'payment_completed') {
+      console.log('[Checkout] Payment completed, updating bill data:', data);
+      
+      // Update bill totals if provided in the update
+      if (data.bill) {
+        setSubtotal(data.bill.subtotal_cents || subtotal);
+        setTax(data.bill.tax_cents || tax);
+        setTotal(data.bill.total_cents || total);
+        setPaidCents(data.bill.paid_cents);
+        setRemainingCents(data.bill.remaining_cents);
+      }
+      
+      // Optionally refresh bill items if needed
+      // You could refetch items here if the bill structure changed
+    }
+  }, [subtotal, tax, total]);
+
+  const handleActionCableError = useCallback((error: Event) => {
+    console.error('[Checkout] ActionCable connection error:', error);
+  }, []);
+
+  // Subscribe to ActionCable updates - only when session token is available
+  usePaymentUpdatesActionCable({
+    onPaymentCompleted: handlePaymentUpdate,
+    onError: handleActionCableError,
+    enabled: hasSessionToken,
+  });
 
   // Load session data and fetch bill items on mount
   useEffect(() => {
+    // Check if session token is available for SSE subscription
+    const sessionToken = sessionStorageUtils.getSessionToken();
+    setHasSessionToken(!!sessionToken);
+    
     // Load session data from sessionStorage if available
     const sessionData = sessionStorageUtils.getFullSessionData();
     if (sessionData) {
